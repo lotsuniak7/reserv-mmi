@@ -4,60 +4,32 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd21c22a-e462-4a8d-b0d3-d193fc8d4183" name="Changes" comment="La maquette est apliquée">
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/reservation.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/api/health/route.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/materiels/[id]/page.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/components/Header.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/components/MaterialCard.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/components/Slidebar.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/auth/confirm/route.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/auth/error/page.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/auth/forgot-password/page.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/auth/login/page.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/auth/sign-up-success/page.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/auth/sign-up/page.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/auth/update-password/page.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/globals.css" beforeDir="false" afterPath="$PROJECT_DIR$/app/globals.css" afterDir="false" />
+    <list default="true" id="fd21c22a-e462-4a8d-b0d3-d193fc8d4183" name="Changes" comment="Grand changement, authentification">
+      <change afterPath="$PROJECT_DIR$/app/(protected)/layout.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/(protected)/materiels/[id]/not-found.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/(protected)/materiels/[id]/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/(protected)/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/api/instruments/seed/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/auth/layout.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/auth/login/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/auth/signup/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/components/CatalogueToolbar.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/components/auth/LoginForm.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/components/auth/LogoutButton.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/components/auth/SignupForm.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/bulk.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/supabase/client.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/health/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/health/route.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/opengraph-image.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/protected/layout.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/protected/page.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/twitter-image.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/auth-button.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/deploy-button.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/env-var-warning.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/forgot-password-form.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/hero.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/login-form.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/logout-button.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/next-logo.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/sign-up-form.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/supabase-logo.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/theme-switcher.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/tutorial/code-block.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/tutorial/connect-supabase-steps.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/tutorial/fetch-data-steps.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/tutorial/sign-up-user-steps.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/tutorial/tutorial-step.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/ui/badge.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/ui/button.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/ui/card.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/ui/checkbox.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/ui/dropdown-menu.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/ui/input.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/ui/label.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/update-password-form.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/supabase/client.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/supabase/middleware.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/materiels/[id]/page.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/page.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/Header.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/MaterialCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/MaterialCard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/Slidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/Sidebar.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/supabase/server.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/supabase/server.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/utils.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/middleware.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -67,6 +39,7 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
+        <option value="TypeScript File" />
         <option value="TypeScript JSX File" />
       </list>
     </option>
@@ -94,22 +67,29 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "/Users/ivanlotsunyak/projets-dev/reservation",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "ts.external.directory.path": "/Users/ivanlotsunyak/projets-dev/reservation/node_modules/typescript/lib",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/ivanlotsunyak/projets-dev/reservation&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;/Users/ivanlotsunyak/projets-dev/reservation/node_modules/typescript/lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/app/(protected)" />
+      <recent name="$PROJECT_DIR$/lib" />
+      <recent name="$PROJECT_DIR$/lib/supabase" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -126,7 +106,12 @@
       <option name="presentableId" value="Default" />
       <updated>1758717516824</updated>
       <workItem from="1758717517908" duration="7820000" />
-      <workItem from="1759730766998" duration="4701000" />
+      <workItem from="1759730766998" duration="12543000" />
+      <workItem from="1759781834565" duration="15000" />
+      <workItem from="1759949005776" duration="902000" />
+      <workItem from="1760076888175" duration="9693000" />
+      <workItem from="1760442239960" duration="16208000" />
+      <workItem from="1760681385262" duration="1061000" />
     </task>
     <task id="LOCAL-00001" summary="New project">
       <option name="closed" value="true" />
@@ -144,7 +129,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758723027389</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="La maquette est apliquée">
+      <option name="closed" value="true" />
+      <created>1759735602031</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1759735602031</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -153,6 +146,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="New project" />
     <MESSAGE value="La maquette est apliquée" />
-    <option name="LAST_COMMIT_MESSAGE" value="La maquette est apliquée" />
+    <MESSAGE value="Grand changement, authentification" />
+    <option name="LAST_COMMIT_MESSAGE" value="Grand changement, authentification" />
   </component>
 </project>

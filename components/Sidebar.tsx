@@ -1,6 +1,7 @@
 import Link from "next/link";
+// Barre latérale - navigation principale de l’application
 
-export default function Slidebar() {
+export default function Sidebar() {
     return (
         <aside className="w-[260px] p-6 border-r hidden md:flex flex-col gap-6"
                style={{ background:"var(--surface)", borderColor:"var(--border)" }}>

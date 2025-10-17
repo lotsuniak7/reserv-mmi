@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+// Pour verifier la connexion à la base de données
+
 export async function GET() {
     const supabase = await createClient();
     const { count, error } = await supabase
