@@ -36,12 +36,32 @@ body {
     color: var(--text-primary);
 }
 
-.container-app {
-    @apply min-h-screen flex;
-}
-
+/* Карточки */
 .card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: calc(var(--radius));
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Скроллбар для Sidebar */
+aside::-webkit-scrollbar {
+    width: 6px;
+}
+
+aside::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+aside::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+aside::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
 }

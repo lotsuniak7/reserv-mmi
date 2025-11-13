@@ -1,4 +1,4 @@
-// 🏠 Catalogue avec recherche et filtre par catégorie
+// Catalogue avec recherche et filtre par catégorie
 import CatalogueToolbar, { InstrumentLite } from "@/components/CatalogueToolbar";
 import { createClient } from "@/lib/supabase/server";
 

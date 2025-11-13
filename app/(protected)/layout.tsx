@@ -7,7 +7,6 @@ import { redirect } from "next/navigation";
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
     const cookieStore = cookies();
 
-    // Read-only cookies: ТОЛЬКО get, без set/remove
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -24,12 +23,18 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     if (!user) redirect("/auth/login");
 
     return (
-        <div className="container-app">
+        <div className="min-h-screen bg-[var(--background)]">
             <Sidebar />
-            <main className="flex-1 p-6">
-                <Header />
-                {children}
-            </main>
+
+            {/* ГЛАВНОЕ: отступ слева md:ml-[260px] чтобы не перекрывать */}
+            <div className="md:ml-[260px]">
+                <main className="p-6">
+                    <Header />
+                    <div className="mt-6">
+                        {children}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 }
