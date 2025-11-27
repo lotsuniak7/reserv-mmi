@@ -50,9 +50,9 @@ body {
 }
 
 /* Скроллбар для Sidebar */
-aside::-webkit-scrollbar {
+/*aside::-webkit-scrollbar {
     width: 6px;
-}
+}*/
 
 aside::-webkit-scrollbar-track {
     background: transparent;
