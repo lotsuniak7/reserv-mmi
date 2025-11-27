@@ -6,7 +6,7 @@ import Link from "next/link";
 import LogoutButton from "@/components/auth/LogoutButton";
 
 export default async function Header() {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -22,7 +22,7 @@ export default async function Header() {
 
     async function signOut() {
         "use server";
-        const cookieStore = cookies();
+        const cookieStore = await cookies();
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,

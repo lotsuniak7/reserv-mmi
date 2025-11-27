@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 // Client Supabase côté serveur (utilisé pour lire la base en SSR)
 
 export async function createClient() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -14,7 +14,7 @@ export default function LoginPage({ searchParams }: { searchParams?: { error?: s
             redirect(`/auth/login?error=${encodeURIComponent("Champs requis manquants.")}`);
         }
 
-        const cookieStore = cookies();
+        const cookieStore = await cookies();
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
