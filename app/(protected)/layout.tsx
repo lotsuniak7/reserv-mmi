@@ -28,24 +28,20 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     if (!user) redirect("/auth/login");
 
     return (
-        // flex-row не нужен, так как Sidebar fixed.
-        <div className="min-h-screen bg-[var(--background)]">
-
-            {/* Сайдбар фиксирован, он не занимает места в потоке */}
+        <div className="flex h-screen overflow-hidden bg-[var(--background)]">
+            {/* Сайдбар: на мобилке скрыт и выезжает, на дескпе в потоке */}
             <Sidebar />
 
-            {/* ГЛАВНОЕ:
-               1. md:ml-[260px] -> сдвигает весь контент вправо ровно на ширину сайдбара.
-               2. min-h-screen -> растягивает контент на всю высоту.
-            */}
-            <div className="md:ml-[260px] min-h-screen">
-                <main className="flex-1 p-6">
+            {/* Основной контент: занимает оставшееся место */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Заголовок — не прокручивается */}
+                <header className="flex-shrink-0 border-b p-6" style={{ borderColor: "var(--border)" }}>
                     <Header />
+                </header>
 
-                    {/* Контент страницы (твои материалы) */}
-                    <div className="mt-6">
-                        {children}
-                    </div>
+                {/* Контент страницы — прокручивается только эта часть */}
+                <main className="flex-1 overflow-y-auto p-6">
+                    {children}
                 </main>
             </div>
         </div>

@@ -6,12 +6,51 @@ import { useState } from "react";
 export default function Sidebar() {
     const [isOpen, setIsOpen] = useState(false);
 
+    const navLinks = [
+        { href: "/materiels", label: "Matériels" },
+        { href: "/mes-reservations", label: "Mes réservations" },
+        { href: "/admin", label: "Administration" },
+        { href: "/aide", label: "Aide / Tutoriels" },
+    ];
+
+    const sidebarContent = (
+        <>
+            {/* Логотип */}
+            <div className="flex items-center gap-3 pb-4 border-b" style={{ borderColor: "var(--border)" }}>
+                <div
+                    className="w-10 h-10 rounded-xl grid place-items-center text-white font-bold text-sm flex-shrink-0"
+                    style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}
+                >
+                    MMI
+                </div>
+                <div className="min-w-0">
+                    <div className="font-semibold text-sm">MMI Dijon</div>
+                    <div className="text-xs opacity-70">Réservation Matériel</div>
+                </div>
+            </div>
+
+            {/* Навигация */}
+            <nav className="flex flex-col gap-2 text-sm">
+                {navLinks.map((link) => (
+                    <Link
+                        key={link.href}
+                        href={link.href}
+                        className="px-3 py-2 rounded-lg hover:bg-[var(--card)] transition-colors"
+                        onClick={() => setIsOpen(false)}
+                    >
+                        {link.label}
+                    </Link>
+                ))}
+            </nav>
+        </>
+    );
+
     return (
-        <div className={"bg-green-500"}>
-            {/* Menu burger pour téléphone */}
+        <>
+            {/* КНОПКА БУРГЕР — только на мобилке */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="fixed top-4 left-4 z-[70] md:hidden w-10 h-10 rounded-lg bg-[var(--card)] border flex flex-col items-center justify-center gap-1.5 shadow-lg"
+                className="fixed top-4 left-4 z-50 md:hidden w-10 h-10 rounded-lg bg-[var(--card)] border flex flex-col items-center justify-center gap-1.5 shadow-lg"
                 style={{ borderColor: "var(--border)" }}
                 aria-label="Toggle menu"
             >
@@ -20,77 +59,46 @@ export default function Sidebar() {
                 <span className={`w-5 h-0.5 bg-[var(--text-primary)] transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
             </button>
 
-            {/* Затемнение на мобилке */}
+            {/* ЗАТЕМНЕНИЕ НА МОБИЛКЕ */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-[65] md:hidden"
+                    className="fixed inset-0 bg-black/50 z-40 md:hidden"
                     onClick={() => setIsOpen(false)}
                 />
             )}
 
-            {/* SIDEBAR */}
+            {/* МОБИЛЬНЫЙ САЙДБАР — выезжает слева на мобилке */}
             <aside
                 className={`
-                    fixed top-0 left-0 h-screen
-                    p-6 border-r 
+                    fixed top-0 left-0 h-screen w-60
+                    p-6 border-r
                     bg-[var(--surface)]
-                    z-[68]
+                    z-45
                     flex flex-col gap-6
                     overflow-y-auto
                     transition-transform duration-300 ease-in-out
                     ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-                    md:translate-x-0
+                    md:hidden
                 `}
-                style={{
-                    borderColor: "var(--border)",
-                }}
+                style={{ borderColor: "var(--border)" }}
             >
-                {/* Logo */}
-                <div className="flex items-center gap-3 pb-4 border-b" style={{ borderColor: "var(--border)" }}>
-                    <div
-                        className="w-10 h-10 rounded-xl grid place-items-center text-white font-bold text-sm flex-shrink-0"
-                        style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}
-                    >
-                        MMI
-                    </div>
-                    <div className="min-w-0">
-                        <div className="font-semibold text-sm">MMI Dijon</div>
-                        <div className="text-xs opacity-70">Réservation Matériel</div>
-                    </div>
-                </div>
-
-                {/* Навигация */}
-                <nav className="flex flex-col gap-2 text-sm">
-                    <Link
-                        href="/materiels"
-                        className="px-3 py-2 rounded-lg hover:bg-[var(--card)] transition-colors"
-                        onClick={() => setIsOpen(false)}
-                    >
-                        Matériels
-                    </Link>
-                    <Link
-                        href="/mes-reservations"
-                        className="px-3 py-2 rounded-lg hover:bg-[var(--card)] transition-colors"
-                        onClick={() => setIsOpen(false)}
-                    >
-                        Mes réservations
-                    </Link>
-                    <Link
-                        href="/admin"
-                        className="px-3 py-2 rounded-lg hover:bg-[var(--card)] transition-colors"
-                        onClick={() => setIsOpen(false)}
-                    >
-                        Administration
-                    </Link>
-                    <Link
-                        href="/aide"
-                        className="px-3 py-2 rounded-lg hover:bg-[var(--card)] transition-colors"
-                        onClick={() => setIsOpen(false)}
-                    >
-                        Aide / Tutoriels
-                    </Link>
-                </nav>
+                {sidebarContent}
             </aside>
-        </div>
+
+            {/* ДЕСКТОПНЫЙ САЙДБАР — фиксирован слева, в потоке */}
+            <aside
+                className="
+                    hidden md:flex md:flex-col md:w-60
+                    p-6 border-r
+                    bg-[var(--surface)]
+                    flex-shrink-0
+                    overflow-y-auto
+                    gap-6
+                "
+                style={{ borderColor: "var(--border)" }}
+            >
+                {sidebarContent}
+            </aside>
+        </>
     );
 }

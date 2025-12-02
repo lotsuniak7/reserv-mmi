@@ -1,6 +1,3 @@
-/*@tailwind base;
-@tailwind components;
-@tailwind utilities;*/
 @import "tailwindcss";
 
 :root {
@@ -31,10 +28,14 @@
     --border: #334155;
 }
 
+html, body {
+    height: 100%;
+}
+
 body {
-    /*@apply antialiased;*/
     background: var(--background);
     color: var(--text-primary);
+    font-family: system-ui, -apple-system, sans-serif;
 }
 
 /* Карточки */
@@ -49,10 +50,10 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* Скроллбар для Sidebar */
-/*aside::-webkit-scrollbar {
+/* Скроллбар для сайдбара */
+aside::-webkit-scrollbar {
     width: 6px;
-}*/
+}
 
 aside::-webkit-scrollbar-track {
     background: transparent;
@@ -65,16 +66,4 @@ aside::-webkit-scrollbar-thumb {
 
 aside::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
-}
-
-/* ВАЖНО: Отступ для основного контента, чтобы сайдбар не перекрывал */
-.main-content-wrapper {
-    /* margin-left: 100px;
-    transition: margin-left 0.3s ease; */
-}
-
-@media (min-width: 768px) {
-    .main-content-wrapper {
-        /*margin-left: var(--sidebar-width);*/
-    }
 }
