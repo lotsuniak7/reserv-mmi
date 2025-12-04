@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useState } from "react";
 
-export default function Sidebar() {
+// Принимаем роль как проп
+export default function Sidebar({ role }: { role?: string }) {
     const [isOpen, setIsOpen] = useState(false);
 
     const navLinks = [
-        { href: "/materiels", label: "Matériels" },
+        { href: "/", label: "Matériels" }, // Исправил ссылку на /
         { href: "/mes-reservations", label: "Mes réservations" },
-        { href: "/admin", label: "Administration" },
+        // Ссылка на админку только если роль === 'admin'
+        ...(role === 'admin' ? [{ href: "/admin", label: "Administration" }] : []),
         { href: "/aide", label: "Aide / Tutoriels" },
     ];
 
@@ -47,7 +49,7 @@ export default function Sidebar() {
 
     return (
         <>
-            {/* КНОПКА БУРГЕР — только на мобилке */}
+            {/* КНОПКА БУРГЕР */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="fixed top-4 left-4 z-50 md:hidden w-10 h-10 rounded-lg bg-[var(--card)] border flex flex-col items-center justify-center gap-1.5 shadow-lg"
@@ -59,7 +61,7 @@ export default function Sidebar() {
                 <span className={`w-5 h-0.5 bg-[var(--text-primary)] transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
             </button>
 
-            {/* ЗАТЕМНЕНИЕ НА МОБИЛКЕ */}
+            {/* ЗАТЕМНЕНИЕ */}
             {isOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 z-40 md:hidden"
@@ -67,15 +69,12 @@ export default function Sidebar() {
                 />
             )}
 
-            {/* МОБИЛЬНЫЙ САЙДБАР — выезжает слева на мобилке */}
+            {/* МОБИЛЬНЫЙ САЙДБАР */}
             <aside
                 className={`
                     fixed top-0 left-0 h-screen w-60
-                    p-6 border-r
-                    bg-[var(--surface)]
-                    z-45
-                    flex flex-col gap-6
-                    overflow-y-auto
+                    p-6 border-r bg-[var(--surface)] z-45
+                    flex flex-col gap-6 overflow-y-auto
                     transition-transform duration-300 ease-in-out
                     ${isOpen ? 'translate-x-0' : '-translate-x-full'}
                     md:hidden
@@ -85,15 +84,12 @@ export default function Sidebar() {
                 {sidebarContent}
             </aside>
 
-            {/* ДЕСКТОПНЫЙ САЙДБАР — фиксирован слева, в потоке */}
+            {/* ДЕСКТОПНЫЙ САЙДБАР */}
             <aside
                 className="
                     hidden md:flex md:flex-col md:w-60
-                    p-6 border-r
-                    bg-[var(--surface)]
-                    flex-shrink-0
-                    overflow-y-auto
-                    gap-6
+                    p-6 border-r bg-[var(--surface)]
+                    flex-shrink-0 overflow-y-auto gap-6
                 "
                 style={{ borderColor: "var(--border)" }}
             >

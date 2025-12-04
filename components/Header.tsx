@@ -35,7 +35,7 @@ export default async function Header() {
     }
 
     return (
-        <div className="ml-auto flex items-center gap-4">
+        <div className="ml-auto flex items-center gap-4 justify-end">
             <span className="text-sm text-[var(--text-secondary)]">
                 {user ? (user.user_metadata?.full_name ?? user.email) : "Utilisateur"}
             </span>
