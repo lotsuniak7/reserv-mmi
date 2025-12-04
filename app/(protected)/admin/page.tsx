@@ -1,6 +1,8 @@
 // app/(protected)/admin/page.tsx
 import { createClient } from "@/lib/supabase/server";
 import AdminReservationRow from "@/app/(protected)/admin/AdminReservationRow";
+import Link from "next/link";
+import {Package} from "lucide-react";
 
 export default async function AdminPage() {
     const supabase = await createClient();
@@ -21,13 +23,24 @@ export default async function AdminPage() {
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 p-4">
-            <div className="flex flex-col gap-2 border-b pb-6">
-                <h1 className="text-3xl font-bold tracking-tight text-[var(--text-primary)]">
-                    Administration des Réservations
-                </h1>
-                <p className="text-[var(--text-secondary)] text-lg">
-                    Gérez les demandes de prêt et validez les retours.
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-6">
+                <div className="flex flex-col gap-1">
+                    <h1 className="text-3xl font-bold tracking-tight text-[var(--text-primary)]">
+                        Administration
+                    </h1>
+                    <p className="text-[var(--text-secondary)] text-lg">
+                        Gérez les réservations et le matériel.
+                    </p>
+                </div>
+
+                {/* Кнопка перехода в Инвентарь */}
+                <Link
+                    href="/admin/inventaire"
+                    className="flex items-center gap-2 px-4 py-2 bg-[var(--text-primary)] text-white rounded-lg hover:opacity-90 transition shadow-sm text-sm font-medium"
+                >
+                    <Package size={16} />
+                    Gérer l'inventaire
+                </Link>
             </div>
 
             <div className="card overflow-hidden border border-[var(--border)] shadow-sm bg-white rounded-xl">

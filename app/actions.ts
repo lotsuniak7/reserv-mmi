@@ -124,3 +124,53 @@ export async function updateReservationStatus(
     revalidatePath("/mes-reservations");
     return { success: true };
 }
+
+// ... существующий код ...
+
+// --- ИНВЕНТАРЬ (Только Админ) ---
+
+// 4. Удаление товара
+export async function deleteInstrument(id: number) {
+    const supabase = await createClient();
+
+    // Проверка прав
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.user_metadata?.role !== 'admin') return { error: "Interdit" };
+
+    const { error } = await supabase.from("instruments").delete().eq("id", id);
+
+    if (error) return { error: error.message };
+    revalidatePath("/admin/inventaire");
+    revalidatePath("/"); // Обновить каталог
+    return { success: true };
+}
+
+// 5. Создание товара
+export async function createInstrument(formData: FormData) {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.user_metadata?.role !== 'admin') return { error: "Interdit" };
+
+    const name = formData.get("name") as string;
+    const categorie = formData.get("categorie") as string;
+    const image_url = formData.get("image_url") as string;
+    const description = formData.get("description") as string;
+
+    if (!name) return { error: "Le nom est obligatoire" };
+
+    const { error } = await supabase.from("instruments").insert({
+        name,
+        categorie,
+        image_url,
+        description,
+        status: "dispo",
+        quantite: 1
+    });
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/admin/inventaire");
+    revalidatePath("/");
+    return { success: true };
+}

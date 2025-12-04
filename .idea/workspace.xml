@@ -4,14 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd21c22a-e462-4a8d-b0d3-d193fc8d4183" name="Changes" comment="fixing bags">
+    <list default="true" id="fd21c22a-e462-4a8d-b0d3-d193fc8d4183" name="Changes" comment="Adding others pages like aide and administretion only for root">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(protected)/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(protected)/admin/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/admin/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(protected)/aide/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/aide/page.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/(protected)/materiels/[id]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/materiels/[id]/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(protected)/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/CatalogueToolbar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/CatalogueToolbar.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/Header.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/Sidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/Sidebar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/actions.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/actions.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -105,7 +104,7 @@
       <workItem from="1764183353663" duration="11463000" />
       <workItem from="1764679058850" duration="2214000" />
       <workItem from="1764682259992" duration="8085000" />
-      <workItem from="1764832225225" duration="533000" />
+      <workItem from="1764832225225" duration="4427000" />
     </task>
     <task id="LOCAL-00001" summary="New project">
       <option name="closed" value="true" />
@@ -171,7 +170,15 @@
       <option name="project" value="LOCAL" />
       <updated>1764684314172</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Adding others pages like aide and administretion only for root">
+      <option name="closed" value="true" />
+      <created>1764832924369</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1764832924369</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -195,7 +202,8 @@
     <MESSAGE value="je comprends pas" />
     <MESSAGE value="fixing the problem with cookies, adding the await" />
     <MESSAGE value="fixing bags" />
-    <option name="LAST_COMMIT_MESSAGE" value="fixing bags" />
+    <MESSAGE value="Adding others pages like aide and administretion only for root" />
+    <option name="LAST_COMMIT_MESSAGE" value="Adding others pages like aide and administretion only for root" />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>
