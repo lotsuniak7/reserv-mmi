@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import LogoutButton from "@/components/auth/LogoutButton";
+import CartLink from "@/components/CartLink"; // <--- Импортируем наш компонент
 
 export default async function Header() {
     const cookieStore = await cookies();
@@ -35,7 +36,12 @@ export default async function Header() {
     }
 
     return (
-        <div className="ml-auto flex items-center gap-4 justify-end">
+        <div className="ml-auto flex items-center justify-end gap-4">
+            {/* Вставляем нашу кнопку корзины */}
+            <CartLink />
+
+            <div className="h-6 w-px bg-slate-200 mx-2"></div>
+
             <span className="text-sm text-[var(--text-secondary)]">
                 {user ? (user.user_metadata?.full_name ?? user.email) : "Utilisateur"}
             </span>
