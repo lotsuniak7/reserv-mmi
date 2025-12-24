@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-// Тип товара из корзины для сервера
+// Тип товара из корзины
 type CartItemPayload = {
     id: number;
     quantity: number;
@@ -13,16 +13,37 @@ type CartItemPayload = {
     endDate: string;
 };
 
-export async function submitCartReservation(items: CartItemPayload[], message: string) {
+// 1. Создание ЗАЯВКИ (Папки) с товарами
+export async function submitCartReservation(items: CartItemPayload[], globalMessage: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Non authentifié" };
 
     if (items.length === 0) return { error: "Le panier est vide." };
 
-    // 1. Проверяем доступность КАЖДОГО товара перед записью
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const maxDate = new Date();
+    maxDate.setFullYear(maxDate.getFullYear() + 1); // Максимум на 1 год вперед
+
+    // --- ПРОВЕРКА ДАТ И КОЛИЧЕСТВА ДЛЯ КАЖДОГО ТОВАРА ---
     for (const item of items) {
-        // Получаем общее кол-во
+        const start = new Date(item.startDate);
+        const end = new Date(item.endDate);
+
+        // 1. Проверка логики дат
+        if (start < today) {
+            return { error: `La date de début pour l'article #${item.id} est dans le passé.` };
+        }
+        if (end < start) {
+            return { error: `La date de fin doit être après le début pour l'article #${item.id}.` };
+        }
+        if (end > maxDate) {
+            return { error: `Réservation trop lointaine (> 1 an) pour l'article #${item.id}.` };
+        }
+
+        // 2. Получаем общее кол-во и проверяем доступность
         const { data: instrument } = await supabase
             .from("instruments")
             .select("quantite, name")
@@ -31,7 +52,6 @@ export async function submitCartReservation(items: CartItemPayload[], message: s
 
         if (!instrument) continue;
 
-        // Считаем занятые в этот период
         const { data: reservations } = await supabase
             .from("reservations")
             .select("quantity")
@@ -48,26 +68,66 @@ export async function submitCartReservation(items: CartItemPayload[], message: s
             return { error: `Stock insuffisant pour "${instrument.name}". Disponible : ${available}.` };
         }
     }
+    // ----------------------------------------------------
 
-    // 2. Если все ок, создаем записи
+    // А. Сначала создаем "Папку" (Request)
+    const { data: request, error: reqError } = await supabase
+        .from("requests")
+        .insert({
+            user_id: user.id,
+            message: globalMessage,
+            status: "en attente"
+        })
+        .select()
+        .single();
+
+    if (reqError || !request) return { error: "Erreur création dossier: " + reqError.message };
+
+    // Б. Готовим товары
     const reservationsToInsert = items.map(item => ({
         user_id: user.id,
         instrument_id: item.id,
         date_debut: item.startDate,
         date_fin: item.endDate,
-        quantity: item.quantity, // Пишем количество!
-        message: message,
-        statut: "en attente"
+        quantity: item.quantity,
+        statut: "en attente",
+        request_id: request.id
     }));
 
-    const { error } = await supabase.from("reservations").insert(reservationsToInsert);
+    // В. Сохраняем товары
+    const { error: linesError } = await supabase.from("reservations").insert(reservationsToInsert);
+
+    if (linesError) return { error: linesError.message };
+
+    revalidatePath("/mes-reservations");
+    revalidatePath("/admin");
+
+    return { success: true };
+}
+
+// 2. Обновление статуса ОДНОЙ СТРОКИ (Для админа: галочка или крестик)
+export async function updateLineStatus(reservationId: number, newStatus: 'validée' | 'refusée', reason?: string) {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.user_metadata?.role !== 'admin') return { error: "Interdit" };
+
+    const updateData: any = { statut: newStatus };
+
+    // Если отказ, записываем причину прямо в строку бронирования
+    if (newStatus === 'refusée' && reason) {
+        updateData.message = reason;
+    }
+
+    const { error } = await supabase
+        .from("reservations")
+        .update(updateData)
+        .eq("id", reservationId);
 
     if (error) return { error: error.message };
 
-    revalidatePath("/mes-reservations");
-    revalidatePath("/");
     revalidatePath("/admin");
-
+    revalidatePath("/mes-reservations");
     return { success: true };
 }
 

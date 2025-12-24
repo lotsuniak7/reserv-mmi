@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import MaterialCard from "@/components/MaterialCard";
-import { Calendar, Search, Filter, X } from "lucide-react";
-import ProductModal from "@/components/ProductModal"; // <--- Импорт модалки
+import { Calendar, Search, Filter, X, ChevronLeft, ChevronRight } from "lucide-react"; // <--- Добавили иконки стрелок
+import ProductModal from "@/components/ProductModal";
 
 export type InstrumentLite = {
     id: number;
@@ -13,13 +13,16 @@ export type InstrumentLite = {
     categorie: string | null;
     quantite: number | null;
     image_url: string | null;
-    description?: string | null; // <--- Добавили описание
+    description?: string | null;
 };
 
 type Props = {
     items: InstrumentLite[];
     categories: string[];
 };
+
+// КОЛИЧЕСТВО ТОВАРОВ НА СТРАНИЦЕ
+const ITEMS_PER_PAGE = 15;
 
 export default function CatalogueToolbar({ items, categories }: Props) {
     const router = useRouter();
@@ -29,12 +32,19 @@ export default function CatalogueToolbar({ items, categories }: Props) {
     const [q, setQ] = useState("");
     const [cat, setCat] = useState<string>("");
 
+    // Состояние пагинации
+    const [currentPage, setCurrentPage] = useState(1); // <--- Новое состояние
+
     // Состояние дат
     const [dateStart, setDateStart] = useState(searchParams.get("start") || "");
     const [dateEnd, setDateEnd] = useState(searchParams.get("end") || "");
 
-    // --- СОСТОЯНИЕ МОДАЛЬНОГО ОКНА ---
     const [selectedItem, setSelectedItem] = useState<InstrumentLite | null>(null);
+
+    // Сбрасываем страницу на 1-ю, если изменился поиск или категория
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [q, cat]);
 
     function handleDateChange(start: string, end: string) {
         const params = new URLSearchParams(searchParams.toString());
@@ -61,6 +71,7 @@ export default function CatalogueToolbar({ items, categories }: Props) {
         router.push("/");
     };
 
+    // 1. Сначала фильтруем весь список
     const filtered = useMemo(() => {
         return items.filter((it) => {
             const okCat = !cat || it.categorie === cat;
@@ -69,10 +80,22 @@ export default function CatalogueToolbar({ items, categories }: Props) {
         });
     }, [items, q, cat]);
 
+    // 2. Потом считаем страницы
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+
+    // 3. Потом "режем" список для текущей страницы
+    const paginatedItems = useMemo(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filtered.slice(start, start + ITEMS_PER_PAGE);
+    }, [filtered, currentPage]);
+
+    // Функции переключения
+    const goToNext = () => setCurrentPage((p) => Math.min(p + 1, totalPages));
+    const goToPrev = () => setCurrentPage((p) => Math.max(p - 1, 1));
+
     return (
         <div className="space-y-6">
 
-            {/* МОДАЛЬНОЕ ОКНО (Всегда здесь, но скрыто, пока selectedItem === null) */}
             <ProductModal
                 instrument={selectedItem}
                 isOpen={!!selectedItem}
@@ -81,7 +104,7 @@ export default function CatalogueToolbar({ items, categories }: Props) {
                 initialDateEnd={dateEnd}
             />
 
-            {/* Фильтры (без изменений) */}
+            {/* ПАНЕЛЬ ФИЛЬТРОВ */}
             <div className="bg-white p-4 rounded-xl border border-[var(--border)] shadow-sm space-y-4">
                 <div className="flex flex-col md:flex-row gap-4 items-end md:items-center pb-4 border-b border-dashed border-slate-200">
                     <div className="flex items-center gap-2 text-sm font-medium text-[var(--primary)] min-w-max">
@@ -120,17 +143,46 @@ export default function CatalogueToolbar({ items, categories }: Props) {
                 </div>
             </div>
 
-            {/* СПИСОК ТОВАРОВ */}
+            {/* СПИСОК ТОВАРОВ (Выводим paginatedItems вместо filtered) */}
             <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(260px,1fr))]">
-                {filtered.map((it) => (
-                    // Мы оборачиваем карточку в div с onClick
+                {paginatedItems.map((it) => (
                     <div key={it.id} onClick={() => setSelectedItem(it)} className="cursor-pointer">
-                        {/* Важно: В MaterialCard нужно убрать Link, если он там есть,
-                           или просто использовать визуальную карточку без ссылки */}
                         <MaterialCard {...it} />
                     </div>
                 ))}
             </div>
+
+            {/* ЕСЛИ ПУСТО */}
+            {filtered.length === 0 && (
+                <div className="text-center py-12 text-slate-400 border border-dashed rounded-xl">
+                    Aucun résultat trouvé.
+                </div>
+            )}
+
+            {/* ПАГИНАЦИЯ (Показываем только если страниц больше 1) */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 pt-4 border-t border-slate-100">
+                    <button
+                        onClick={goToPrev}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+
+                    <span className="text-sm font-medium text-[var(--text-secondary)]">
+                        Page <span className="text-[var(--text-primary)] font-bold">{currentPage}</span> sur {totalPages}
+                    </span>
+
+                    <button
+                        onClick={goToNext}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                    >
+                        <ChevronRight size={20} />
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

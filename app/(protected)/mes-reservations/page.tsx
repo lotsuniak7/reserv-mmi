@@ -1,157 +1,84 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import CancelButton from "@/components/CancelBurron";
-
-// 1. Adaptation du Type TypeScript à votre schéma
-type ReservationWithInstrument = {
-    id: number;
-    date_debut: string; // Correspond à votre colonne date_debut
-    date_fin: string;   // Correspond à votre colonne date_fin
-    statut: string;     // Correspond à votre colonne statut
-    message: string | null; // Correspond à votre colonne message
-    // La jointure avec la table instruments
-    instruments: {
-        name: string;
-        image_url: string | null;
-        categorie: string | null;
-    } | null;
-};
 
 export default async function MesReservationsPage() {
     const supabase = await createClient();
-
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect("/auth/login");
 
-    // 2. Requête Supabase avec vos vrais noms de colonnes
-    const { data: rawReservations, error } = await supabase
-        .from("reservations")
+    // Загружаем папки пользователя
+    const { data: requests } = await supabase
+        .from("requests")
         .select(`
-            id, date_debut, date_fin, statut, message,
-            instruments ( name, image_url, categorie )
+            *,
+            reservations (
+                *,
+                instruments ( name, image_url )
+            )
         `)
         .eq("user_id", user.id)
-        .order("date_debut", { ascending: false });
-
-    if (error) {
-        return (
-            <div className="card p-6 border-red-200 bg-red-50 text-red-700">
-                Erreur : {error.message}
-            </div>
-        );
-    }
-
-    const reservations = rawReservations as unknown as ReservationWithInstrument[];
-
-    // 3. Mapping des couleurs selon la valeur du texte "statut"
-    // J'assume ici des valeurs standards, adaptez les clés si vos statuts sont différents en base
-    const statusStyles: Record<string, string> = {
-        "en attente": "bg-amber-100 text-amber-700 border-amber-200",
-        "validé": "bg-green-100 text-green-700 border-green-200",
-        "validée": "bg-green-100 text-green-700 border-green-200", // Au cas où
-        "refusé": "bg-red-100 text-red-700 border-red-200",
-        "terminé": "bg-slate-100 text-slate-600 border-slate-200",
-    };
+        .order("created_at", { ascending: false });
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Mes réservations</h1>
-                <Link href="/" className="text-sm font-medium text-[var(--primary)] hover:underline">
-                    + Nouvelle réservation
+        <div className="max-w-5xl mx-auto space-y-8 p-4">
+            <div className="flex justify-between items-center border-b pb-6">
+                <h1 className="text-3xl font-bold">Mes demandes</h1>
+                <Link href="/" className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:opacity-90 transition font-medium text-sm">
+                    + Nouvelle demande
                 </Link>
             </div>
 
-            {reservations.length === 0 ? (
-                <div className="card p-12 flex flex-col items-center justify-center text-center space-y-4">
-                    <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-3xl">
-                        📦
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-semibold">Aucune réservation</h2>
-                        <p className="text-[var(--text-secondary)]">Vous n'avez pas encore réservé de matériel.</p>
-                    </div>
-                    <Link
-                        href="/materiels"
-                        className="px-4 py-2 rounded-lg text-white transition hover:opacity-90 mt-2"
-                        style={{ background: "var(--primary)" }}
-                    >
-                        Consulter le catalogue
-                    </Link>
-                </div>
-            ) : (
-                <div className="grid gap-4">
-                    {reservations.map((resa) => (
-                        <div key={resa.id} className="card p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center group hover:shadow-md transition-all">
-                            {/* Image du matériel */}
-                            <div className="w-full sm:w-24 h-24 sm:h-16 rounded-lg bg-[var(--surface)] overflow-hidden flex-shrink-0 relative border border-[var(--border)]">
-                                {resa.instruments?.image_url ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img
-                                        src={resa.instruments.image_url}
-                                        alt={resa.instruments.name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full grid place-items-center text-xs text-gray-400">
-                                        No IMG
-                                    </div>
-                                )}
-                                <div className="w-full sm:w-auto flex sm:flex-col gap-2 justify-end pl-0 sm:pl-4 sm:border-l border-[var(--border)] mt-4 sm:mt-0 pt-4 sm:pt-0">
-                                    {resa.statut === 'en attente' && (
-                                        <CancelButton reservationId={resa.id} />
-                                    )}
-                                    {(resa.statut === 'validé' || resa.statut === 'validée') && (
-                                        <Link href={`/materiels`} className="px-3 py-1.5 text-xs rounded bg-slate-100 text-slate-700 hover:bg-slate-200 text-center transition">
-                                            Voir fiche
-                                        </Link>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Informations de réservation */}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex flex-wrap items-center gap-2 mb-1">
-                                    {/* Badge Statut */}
-                                    <span className={`text-xs px-2 py-0.5 rounded-full border capitalize ${statusStyles[resa.statut?.toLowerCase()] || "bg-gray-100 border-gray-200"}`}>
-                                        {resa.statut}
-                                    </span>
-                                    <span className="text-xs text-[var(--text-secondary)]">
-                                        #{resa.id}
-                                    </span>
-                                </div>
-
-                                <h3 className="font-semibold text-lg truncate">
-                                    {resa.instruments?.name ?? "Matériel inconnu"}
-                                </h3>
-
-                                <div className="text-sm text-[var(--text-secondary)] flex flex-wrap gap-x-4 gap-y-1 mt-1">
-                                    <div className="flex items-center gap-1">
-                                        <span className="opacity-70">Du</span>
-                                        <span className="font-medium text-[var(--text-primary)]">
-                                            {new Date(resa.date_debut).toLocaleDateString("fr-FR")}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <span className="opacity-70">au</span>
-                                        <span className="font-medium text-[var(--text-primary)]">
-                                            {new Date(resa.date_fin).toLocaleDateString("fr-FR")}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Affichage du message s'il existe */}
-                                {resa.message && (
-                                    <p className="text-xs text-[var(--text-secondary)] mt-2 italic bg-slate-50 p-1.5 rounded border border-slate-100 inline-block">
-                                        "{resa.message}"
-                                    </p>
-                                )}
-                            </div>
+            <div className="space-y-8">
+                {requests?.map((req) => (
+                    <div key={req.id} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                        {/* Заголовок папки */}
+                        <div className="bg-slate-50 p-4 border-b border-slate-100">
+                            <span className="font-bold text-slate-700">Demande du {new Date(req.created_at).toLocaleDateString()}</span>
+                            {req.message && <p className="text-sm text-slate-500 italic mt-1">Votre note : "{req.message}"</p>}
                         </div>
-                    ))}
-                </div>
-            )}
+
+                        {/* Список предметов внутри */}
+                        <div className="divide-y divide-slate-100">
+                            {req.reservations.map((resa: any) => (
+                                <div key={resa.id} className="p-4 flex gap-4 items-center">
+                                    <div className="w-16 h-12 bg-slate-100 rounded overflow-hidden shrink-0">
+                                        {resa.instruments?.image_url &&
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={resa.instruments.image_url} className="w-full h-full object-cover" alt=""/>
+                                        }
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="font-bold text-sm">{resa.instruments?.name}</div>
+                                        <div className="text-xs text-slate-500">
+                                            {new Date(resa.date_debut).toLocaleDateString("fr-FR")} - {new Date(resa.date_fin).toLocaleDateString("fr-FR")}
+                                        </div>
+                                        {/* Если админ отказал и написал причину */}
+                                        {resa.statut === 'refusée' && resa.message && (
+                                            <div className="text-xs text-red-600 font-medium mt-1 bg-red-50 px-2 py-1 rounded inline-block">
+                                                Refus : {resa.message}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Статус бейдж */}
+                                    <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                                        resa.statut === 'en attente' ? 'bg-amber-100 text-amber-700' :
+                                            resa.statut === 'validée' ? 'bg-green-100 text-green-700' :
+                                                'bg-red-100 text-red-700'
+                                    }`}>
+                                        {resa.statut}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+
+                {(!requests || requests.length === 0) && (
+                    <div className="text-center py-12 text-slate-400">Aucune demande pour le moment.</div>
+                )}
+            </div>
         </div>
     );
 }
