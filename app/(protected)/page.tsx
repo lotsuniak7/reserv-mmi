@@ -10,7 +10,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
     // 1. Загружаем ВСЕ инструменты
     const { data: allInstruments, error } = await supabase
         .from("instruments")
-        .select("id,name,status,categorie,quantite,image_url")
+        .select("id,name,status,categorie,quantite,image_url,description")
         .order("name", { ascending: true });
 
     if (error) return <div>Erreur: {error.message}</div>;

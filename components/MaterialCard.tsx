@@ -26,7 +26,7 @@ export default function MaterialCard({
     const st = statusMap[status] ?? { text: status, classes: "bg-slate-100 text-slate-700" };
 
     return (
-        <Link href={`/materiels/${id}`} className="block h-full">
+        <div>
             {/* h-full, чтобы все карточки выравнивались по высоте в гриде */}
             <article className="card p-4 hover:shadow transition h-full flex flex-col">
                 {/* 1) Vignette — фиксируем высоту и соотношение */}
@@ -71,6 +71,6 @@ export default function MaterialCard({
           </span>
                 </div>
             </article>
-        </Link>
+        </div>
     );
 }

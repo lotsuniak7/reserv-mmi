@@ -178,3 +178,17 @@ export async function createInstrument(formData: FormData) {
     revalidatePath("/");
     return { success: true };
 }
+
+// 6. Получить бронирования для конкретного товара (для модального окна)
+export async function getInstrumentReservations(id: number) {
+    const supabase = await createClient();
+
+    const { data } = await supabase
+        .from("reservations")
+        .select("date_debut, date_fin, quantity")
+        .eq("instrument_id", id)
+        .neq("statut", "refusée")
+        .neq("statut", "terminée");
+
+    return data || [];
+}
