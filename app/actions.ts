@@ -5,63 +5,67 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-// 1. Création de réservation AVEC VÉRIFICATION
-export async function createReservation(formData: FormData) {
+// Тип товара из корзины для сервера
+type CartItemPayload = {
+    id: number;
+    quantity: number;
+    startDate: string;
+    endDate: string;
+};
+
+export async function submitCartReservation(items: CartItemPayload[], message: string) {
     const supabase = await createClient();
-
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) redirect("/auth/login");
+    if (!user) return { error: "Non authentifié" };
 
-    const instrument_id = Number(formData.get("instrument_id"));
-    const date_debut = formData.get("date_debut") as string;
-    const date_fin = formData.get("date_fin") as string;
-    const message = formData.get("message") as string;
+    if (items.length === 0) return { error: "Le panier est vide." };
 
-    if (!instrument_id || !date_debut || !date_fin) {
-        return { error: "Veuillez remplir les dates obligatoires." };
+    // 1. Проверяем доступность КАЖДОГО товара перед записью
+    for (const item of items) {
+        // Получаем общее кол-во
+        const { data: instrument } = await supabase
+            .from("instruments")
+            .select("quantite, name")
+            .eq("id", item.id)
+            .single();
+
+        if (!instrument) continue;
+
+        // Считаем занятые в этот период
+        const { data: reservations } = await supabase
+            .from("reservations")
+            .select("quantity")
+            .eq("instrument_id", item.id)
+            .neq("statut", "refusée")
+            .neq("statut", "terminée")
+            .lte("date_debut", item.endDate)
+            .gte("date_fin", item.startDate);
+
+        const reservedCount = reservations?.reduce((sum, r) => sum + (r.quantity || 1), 0) || 0;
+        const available = (instrument.quantite || 1) - reservedCount;
+
+        if (item.quantity > available) {
+            return { error: `Stock insuffisant pour "${instrument.name}". Disponible : ${available}.` };
+        }
     }
 
-    if (new Date(date_debut) > new Date(date_fin)) {
-        return { error: "La date de début doit être avant la date de fin." };
-    }
-
-    // --- VÉRIFICATION DE DISPONIBILITÉ ---
-    // On cherche s'il existe une réservation qui chevauche ces dates pour cet instrument
-    // (Statut qui n'est ni 'refusée' ni 'terminée')
-    const { data: conflicts, error: checkError } = await supabase
-        .from("reservations")
-        .select("id")
-        .eq("instrument_id", instrument_id)
-        .neq("statut", "refusée")
-        .neq("statut", "terminée")
-        // Logique de chevauchement : (DébutA <= FinB) et (FinA >= DébutB)
-        .lte("date_debut", date_fin)
-        .gte("date_fin", date_debut);
-
-    if (checkError) {
-        return { error: "Erreur lors de la vérification : " + checkError.message };
-    }
-
-    if (conflicts && conflicts.length > 0) {
-        return { error: "Ce matériel est déjà réservé pour tout ou partie de cette période." };
-    }
-    // -------------------------------------
-
-    const { error } = await supabase.from("reservations").insert({
+    // 2. Если все ок, создаем записи
+    const reservationsToInsert = items.map(item => ({
         user_id: user.id,
-        instrument_id,
-        date_debut,
-        date_fin,
-        message,
+        instrument_id: item.id,
+        date_debut: item.startDate,
+        date_fin: item.endDate,
+        quantity: item.quantity, // Пишем количество!
+        message: message,
         statut: "en attente"
-    });
+    }));
 
-    if (error) {
-        return { error: error.message };
-    }
+    const { error } = await supabase.from("reservations").insert(reservationsToInsert);
+
+    if (error) return { error: error.message };
 
     revalidatePath("/mes-reservations");
-    revalidatePath("/materiels");
+    revalidatePath("/");
     revalidatePath("/admin");
 
     return { success: true };

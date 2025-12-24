@@ -1,82 +1,126 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import ReservationButton from "@/components/ReservationButton";
-import ProductCalendar from "@/components/ProductCalendar"; // <--- Импорт
+import ProductActions from "@/components/ProductActions";
 
-// ... Тип Instrument (оставляем как есть) ...
+type Instrument = {
+    id: number;
+    name: string;
+    status: string;
+    categorie: string | null;
+    quantite: number | null;
+    image_url: string | null;
+    description: string | null;
+    caracteristiques: Record<string, any> | null;
+};
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+// Добавили searchParams
+export default async function Page({
+                                       params,
+                                       searchParams
+                                   }: {
+    params: Promise<{ id: string }>,
+    searchParams: Promise<{ start?: string, end?: string }>
+}) {
     const supabase = await createClient();
     const { id } = await params;
+    const { start, end } = await searchParams; // Читаем даты из URL
 
-    // 1. Загружаем инструмент
-    const { data: it, error } = await supabase
+    // 1. Загружаем сам товар
+    const { data: itRaw, error } = await supabase
         .from("instruments")
         .select("*")
         .eq("id", Number(id))
         .single();
 
-    if (error || !it) notFound();
+    if (error || !itRaw) notFound();
+    const it = itRaw as Instrument;
 
-    // 2. Загружаем БРОНИРОВАНИЯ для этого инструмента (чтобы показать календарь)
+    // 2. Загружаем бронирования для этого товара
     const { data: reservations } = await supabase
         .from("reservations")
-        .select("date_debut, date_fin")
+        .select("date_debut, date_fin, quantity")
         .eq("instrument_id", it.id)
         .neq("statut", "refusée")
         .neq("statut", "terminée");
 
-    // ... (код статусов statusMap оставляем) ...
     const statusMap: Record<string, { text: string; classes: string }> = {
         dispo: { text: "disponible", classes: "bg-green-100 text-green-700" },
         available: { text: "disponible", classes: "bg-green-100 text-green-700" },
-        "réservé": { text: "réservé", classes: "bg-amber-100 text-amber-700" },
         indisponible: { text: "indisponible", classes: "bg-red-100 text-red-700" },
+        "réservé": { text: "réservé", classes: "bg-amber-100 text-amber-700" },
     };
     const st = statusMap[it.status] ?? { text: it.status, classes: "bg-slate-100 text-slate-700" };
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6">
-            {/* Хлебные крошки и Картинка (оставляем как было) */}
+        <div className="max-w-6xl mx-auto space-y-6 p-4">
+            <div className="text-sm text-[var(--text-secondary)]">
+                <Link href="/" className="hover:underline">Catalogue</Link>
+                <span className="mx-2">/</span>
+                <span>{it.name}</span>
+            </div>
 
-            {/* ... блок с картинкой ... */}
+            <div className="card p-4 bg-white border border-[var(--border)]">
+                <div className="rounded-xl overflow-hidden bg-[var(--surface)] w-full h-[400px] relative flex items-center justify-center">
+                    {it.image_url ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={it.image_url} alt={it.name} className="w-full h-full object-contain" />
+                    ) : (
+                        <div className="text-slate-400 flex flex-col items-center gap-2">
+                            <span className="text-4xl">📷</span>
+                            <span>Pas d'image</span>
+                        </div>
+                    )}
+                </div>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-
-                {/* ЛЕВАЯ КОЛОНКА: Описание и Характеристики (2/3 ширины) */}
-                <div className="md:col-span-2 card p-6 space-y-6 h-fit">
-                    <div className="flex items-center justify-between">
-                        <h1 className="text-3xl font-bold">{it.name}</h1>
-                        {/* Бейдж статуса */}
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${st.classes}`}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 card p-8 space-y-8 h-fit">
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">{it.name}</h1>
+                            {it.categorie && (
+                                <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium uppercase tracking-wide">
+                                    {it.categorie}
+                                </span>
+                            )}
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${st.classes}`}>
                             {st.text}
                         </span>
                     </div>
 
-                    <div className="space-y-2">
-                        <h3 className="font-semibold text-lg">Description</h3>
-                        <p className="text-[var(--text-secondary)] leading-relaxed">
+                    <div className="space-y-3">
+                        <h3 className="font-bold text-lg text-[var(--text-primary)] border-b pb-2">Description</h3>
+                        <p className="text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
                             {it.description || "Aucune description."}
                         </p>
                     </div>
 
-                    {/* Характеристики (оставляем код) */}
-                    {/* ... */}
+                    {it.caracteristiques && Object.keys(it.caracteristiques).length > 0 && (
+                        <div className="space-y-3">
+                            <h3 className="font-bold text-lg text-[var(--text-primary)] border-b pb-2">Caractéristiques</h3>
+                            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                {Object.entries(it.caracteristiques).map(([k, v]) => (
+                                    <div key={k} className="flex justify-between py-1 border-b border-dashed border-slate-100">
+                                        <dt className="text-[var(--text-secondary)]">{k}</dt>
+                                        <dd className="font-medium text-[var(--text-primary)]">{String(v)}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        </div>
+                    )}
                 </div>
 
-                {/* ПРАВАЯ КОЛОНКА: Календарь и Кнопка (1/3 ширины) */}
                 <div className="space-y-6">
-                    {/* Блок действия */}
-                    <div className="card p-5 bg-slate-50 border-slate-200 space-y-4">
-                        <h3 className="font-semibold text-[var(--text-primary)]">Disponibilité</h3>
-
-                        {/* Вставляем календарь */}
-                        <ProductCalendar reservations={reservations || []} />
-
-                        <div className="pt-2">
-                            <ReservationButton instrumentId={it.id} instrumentName={it.name} />
-                        </div>
-                    </div>
+                    {/* Передаем начальные даты, если они есть */}
+                    <ProductActions
+                        instrument={it}
+                        reservations={reservations || []}
+                        totalQty={it.quantite || 1}
+                        initialStart={start}
+                        initialEnd={end}
+                    />
                 </div>
             </div>
         </div>
