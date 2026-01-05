@@ -4,13 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd21c22a-e462-4a8d-b0d3-d193fc8d4183" name="Changes" comment="Adding others pages like aide and administretion only for root">
+    <list default="true" id="fd21c22a-e462-4a8d-b0d3-d193fc8d4183" name="Changes" comment="validation the user by admin">
+      <change afterPath="$PROJECT_DIR$/app/(protected)/admin/users/page.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(protected)/admin/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/admin/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(protected)/aide/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/aide/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(protected)/materiels/[id]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/materiels/[id]/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(protected)/admin/AdminRequestCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/admin/AdminRequestCard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(protected)/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/layout.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/actions.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/actions.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/test/page.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/CancelBurron.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/CancelButton.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -104,7 +107,11 @@
       <workItem from="1764183353663" duration="11463000" />
       <workItem from="1764679058850" duration="2214000" />
       <workItem from="1764682259992" duration="8085000" />
-      <workItem from="1764832225225" duration="4427000" />
+      <workItem from="1764832225225" duration="11576000" />
+      <workItem from="1765268098758" duration="613000" />
+      <workItem from="1765283691103" duration="7548000" />
+      <workItem from="1766593777792" duration="12947000" />
+      <workItem from="1767596882729" duration="5657000" />
     </task>
     <task id="LOCAL-00001" summary="New project">
       <option name="closed" value="true" />
@@ -178,7 +185,47 @@
       <option name="project" value="LOCAL" />
       <updated>1764832924369</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Adding the tools for admin, and others styles">
+      <option name="closed" value="true" />
+      <created>1764837409909</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1764837409909</updated>
+    </task>
+    <task id="LOCAL-00011" summary="l'ajout d'un panier">
+      <option name="closed" value="true" />
+      <created>1765288448135</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1765288448135</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Panier on essai de simplifier">
+      <option name="closed" value="true" />
+      <created>1766596396435</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1766596396436</updated>
+    </task>
+    <task id="LOCAL-00013" summary="changes logics of panier, products">
+      <option name="closed" value="true" />
+      <created>1766597559720</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1766597559720</updated>
+    </task>
+    <task id="LOCAL-00014" summary="encore les changements du panier, les demandes avec la vu dans l administration">
+      <option name="closed" value="true" />
+      <created>1766616780630</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1766616780630</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -203,7 +250,13 @@
     <MESSAGE value="fixing the problem with cookies, adding the await" />
     <MESSAGE value="fixing bags" />
     <MESSAGE value="Adding others pages like aide and administretion only for root" />
-    <option name="LAST_COMMIT_MESSAGE" value="Adding others pages like aide and administretion only for root" />
+    <MESSAGE value="Adding the tools for admin, and others styles" />
+    <MESSAGE value="l'ajout d'un panier" />
+    <MESSAGE value="Panier on essai de simplifier" />
+    <MESSAGE value="changes logics of panier, products" />
+    <MESSAGE value="encore les changements du panier, les demandes avec la vu dans l administration" />
+    <MESSAGE value="validation the user by admin" />
+    <option name="LAST_COMMIT_MESSAGE" value="validation the user by admin" />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>

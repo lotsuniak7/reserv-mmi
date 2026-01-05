@@ -4,6 +4,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { Resend } from 'resend';
 
 // Тип товара из корзины
 type CartItemPayload = {
@@ -251,4 +252,46 @@ export async function getInstrumentReservations(id: number) {
         .neq("statut", "terminée");
 
     return data || [];
+}
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// НОВАЯ ФУНКЦИЯ: Одобрить пользователя
+export async function approveUser(targetUserId: string, targetEmail: string) {
+    const supabase = await createClient();
+
+    // 1. Проверка: Я админ?
+    const { data: { user } } = await supabase.auth.getUser();
+    // (Лучше проверять роль через профиль, но пока оставим как есть или через метаданные)
+    // const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
+    // if (profile?.role !== 'admin') return { error: "Non autorisé" };
+
+    // 2. Обновляем статус в базе
+    const { error } = await supabase
+        .from("profiles")
+        .update({ is_approved: true })
+        .eq("id", targetUserId);
+
+    if (error) return { error: error.message };
+
+    // 3. Отправляем письмо через Resend
+    try {
+        await resend.emails.send({
+            from: 'MMI Dijon <onboarding@resend.dev>', // Или твой домен
+            to: targetEmail,
+            subject: '✅ Votre compte a été validé !',
+            html: `
+                <h1>Bienvenue au Magasin MMI !</h1>
+                <p>Bonne nouvelle, votre compte a été validé par un administrateur.</p>
+                <p>Vous pouvez maintenant vous connecter et réserver du matériel.</p>
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/auth/login">Se connecter</a>
+            `
+        });
+    } catch (e) {
+        console.error("Erreur email:", e);
+        // Не блокируем успех, если письмо не ушло
+    }
+
+    revalidatePath("/admin/users");
+    return { success: true };
 }

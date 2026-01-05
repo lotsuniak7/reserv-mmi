@@ -74,7 +74,7 @@ export default function AdminRequestCard({ request }: { request: any }) {
                             <div className="font-bold text-sm text-slate-800">{resa.instruments?.name}</div>
                             <div className="text-xs text-slate-500 flex gap-2 mt-1">
                                 <span className="bg-slate-100 px-1.5 py-0.5 rounded border">Qté: {resa.quantity}</span>
-                                <span>{new Date(resa.date_debut).toLocaleDateString()} ➜ {new Date(resa.date_fin).toLocaleDateString()}</span>
+                                <span>{new Date(resa.date_debut).toLocaleDateString("fr-FR")} ➜ {new Date(resa.date_fin).toLocaleDateString("fr-FR")}</span>
                             </div>
                             {/* Если отказано - показать причину */}
                             {resa.statut === 'refusée' && resa.message && (
