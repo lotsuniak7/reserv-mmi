@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
-export default function LoginPage({ searchParams }: { searchParams?: { error?: string } }) {
+// ✅ Correction Next.js 15 : searchParams est maintenant une Promise
+export default async function LoginPage(props: { searchParams: Promise<{ error?: string }> }) {
+    const searchParams = await props.searchParams;
+
     async function signIn(formData: FormData) {
         "use server";
         const email = String(formData.get("email") || "");

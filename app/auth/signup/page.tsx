@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
-export default function SignupPage({ searchParams }: { searchParams?: { error?: string } }) {
+// ✅ Correction Next.js 15 : searchParams est maintenant une Promise
+export default async function SignupPage(props: { searchParams: Promise<{ error?: string }> }) {
+    const searchParams = await props.searchParams;
+
     async function signUp(formData: FormData) {
         "use server";
         // ⚠️ Actuellement aucune contrainte dure; on accepte >= 1 caractère.

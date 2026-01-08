@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import AdminRequestCard from "@/app/(protected)/admin/AdminRequestCard";
 import Link from "next/link";
 import { Package } from "lucide-react";
+import { User } from "lucide-react";
 
 export default async function AdminPage() {
     const supabase = await createClient();
@@ -29,9 +30,14 @@ export default async function AdminPage() {
                     <h1 className="text-3xl font-bold text-[var(--text-primary)]">Administration</h1>
                     <p className="text-[var(--text-secondary)]">Gérez les demandes de matériel.</p>
                 </div>
-                <Link href="/admin/inventaire" className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg hover:opacity-90 transition font-medium text-sm">
-                    <Package size={18}/> Inventaire
-                </Link>
+                <div className="flex gap-2">
+                    <Link href="/admin/users" className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:opacity-90 transition font-medium text-sm">
+                        <User size={18}/> Users
+                    </Link>
+                    <Link href="/admin/inventaire" className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg hover:opacity-90 transition font-medium text-sm">
+                        <Package size={18}/> Inventaire
+                    </Link>
+                </div>
             </div>
 
             <div className="space-y-6">
