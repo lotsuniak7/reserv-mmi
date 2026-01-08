@@ -209,20 +209,52 @@ export async function deleteInstrument(id: number) {
 export async function createInstrument(formData: FormData) {
     const supabase = await createClient();
 
+    // 1. Vérification Admin
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.user_metadata?.role !== 'admin') return { error: "Interdit" };
 
     const name = formData.get("name") as string;
     const categorie = formData.get("categorie") as string;
-    const image_url = formData.get("image_url") as string;
     const description = formData.get("description") as string;
 
-    if (!name) return { error: "Le nom est obligatoire" };
+    // 2. Récupération du fichier image
+    const imageFile = formData.get("image") as File;
+    let finalImageUrl = "";
 
+    if (!name) return { error: "Le nom du matériel est obligatoire." };
+
+    // 3. Logique d'upload de l'image (si un fichier est fourni)
+    if (imageFile && imageFile.size > 0) {
+        // Créer un nom de fichier unique pour éviter les conflits (ex: 123456789-camera.jpg)
+        const fileName = `${Date.now()}-${imageFile.name}`;
+
+        // Upload vers le bucket "instruments"
+        const { data: uploadData, error: uploadError } = await supabase
+            .storage
+            .from('instruments')
+            .upload(fileName, imageFile, {
+                cacheControl: '3600',
+                upsert: false
+            });
+
+        if (uploadError) {
+            return { error: "Erreur upload image : " + uploadError.message };
+        }
+
+        // Récupérer l'URL publique pour la base de données
+        const { data: publicUrlData } = supabase
+            .storage
+            .from('instruments')
+            .getPublicUrl(fileName);
+
+        finalImageUrl = publicUrlData.publicUrl;
+    }
+
+    // 4. Insertion en base de données avec l'URL de l'image
     const { error } = await supabase.from("instruments").insert({
         name,
         categorie,
-        image_url,
+        image_url: finalImageUrl, // On enregistre le lien généré
         description,
         status: "dispo",
         quantite: 1
@@ -331,3 +363,8 @@ export async function rejectUser(targetUserId: string, targetEmail: string) {
     return { success: true };
 }
 
+// app/actions/inventory.ts
+
+// ... autres imports
+// Ajoute cet import pour générer des noms de fichiers uniques (optionnel mais recommandé)
+// ou utilise simplement Date.now() comme je vais faire ci-dessous.
