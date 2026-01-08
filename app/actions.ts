@@ -287,6 +287,9 @@ export async function approveUser(targetUserId: string, targetEmail: string) {
         // Не блокируем успех, если письмо не ушло
     }
 
+    // renovle la liste d'utilisateurs
     revalidatePath("/admin/users");
+    // on vide le cache
+    revalidatePath("/", "layout");
     return { success: true };
 }
