@@ -30,7 +30,7 @@ export default function LoginPage({ searchParams }: { searchParams?: { error?: s
                                 cookieStore.set(name, value, options)
                             );
                         } catch {
-                            // Игнорируем ошибку, если вызываем из Server Component
+                            // Игнорируем ошибку, если вызываем из Server Componen
                         }
                     },
                 },
