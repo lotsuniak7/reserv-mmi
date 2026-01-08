@@ -20,9 +20,19 @@ export default function LoginPage({ searchParams }: { searchParams?: { error?: s
             process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
             {
                 cookies: {
-                    get: (name) => cookieStore.get(name)?.value,
-                    set: (name, value, options) => cookieStore.set(name, value, options),
-                    remove: (name, options) => cookieStore.set(name, "", { ...options, maxAge: 0 }),
+                    // ✅ НОВЫЙ ПРАВИЛЬНЫЙ СПОСОБ:
+                    getAll() {
+                        return cookieStore.getAll();
+                    },
+                    setAll(cookiesToSet) {
+                        try {
+                            cookiesToSet.forEach(({ name, value, options }) =>
+                                cookieStore.set(name, value, options)
+                            );
+                        } catch {
+                            // Игнорируем ошибку, если вызываем из Server Component
+                        }
+                    },
                 },
             }
         );
