@@ -26,25 +26,17 @@ export async function submitCartReservation(items: CartItemPayload[], globalMess
     today.setHours(0, 0, 0, 0);
 
     const maxDate = new Date();
-    maxDate.setFullYear(maxDate.getFullYear() + 1); // Максимум на 1 год вперед
+    maxDate.setFullYear(maxDate.getFullYear() + 1);
 
-    // --- ПРОВЕРКА ДАТ И КОЛИЧЕСТВА ДЛЯ КАЖДОГО ТОВАРА ---
+    // --- ПРОВЕРКА ДАТ И КОЛИЧЕСТВА ---
     for (const item of items) {
         const start = new Date(item.startDate);
         const end = new Date(item.endDate);
 
-        // 1. Проверка логики дат
-        if (start < today) {
-            return { error: `La date de début pour l'article #${item.id} est dans le passé.` };
-        }
-        if (end < start) {
-            return { error: `La date de fin doit être après le début pour l'article #${item.id}.` };
-        }
-        if (end > maxDate) {
-            return { error: `Réservation trop lointaine (> 1 an) pour l'article #${item.id}.` };
-        }
+        if (start < today) return { error: `Date passée pour l'article #${item.id}.` };
+        if (end < start) return { error: `Date fin avant début pour l'article #${item.id}.` };
+        if (end > maxDate) return { error: `Réservation > 1 an pour l'article #${item.id}.` };
 
-        // 2. Получаем общее кол-во и проверяем доступность
         const { data: instrument } = await supabase
             .from("instruments")
             .select("quantite, name")
@@ -69,7 +61,6 @@ export async function submitCartReservation(items: CartItemPayload[], globalMess
             return { error: `Stock insuffisant pour "${instrument.name}". Disponible : ${available}.` };
         }
     }
-    // ----------------------------------------------------
 
     // А. Сначала создаем "Папку" (Request)
     const { data: request, error: reqError } = await supabase
@@ -82,7 +73,11 @@ export async function submitCartReservation(items: CartItemPayload[], globalMess
         .select()
         .single();
 
-    if (reqError || !request) return { error: "Erreur création dossier: " + reqError.message };
+    // ИСПРАВЛЕНИЕ ОШИБКИ ЗДЕСЬ:
+    // Мы безопасно проверяем, есть ли ошибка. Если reqError null, используем запасной текст.
+    if (reqError || !request) {
+        return { error: "Erreur création dossier: " + (reqError?.message || "Erreur inconnue") };
+    }
 
     // Б. Готовим товары
     const reservationsToInsert = items.map(item => ({
