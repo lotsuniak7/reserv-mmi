@@ -276,7 +276,7 @@ export async function approveUser(targetUserId: string, targetEmail: string) {
             to: targetEmail,
             subject: '✅ Votre compte a été validé !',
             html: `
-                <h1>Bienvenue au Magasin MMI !</h1>
+                <h1>Bienvenue au notre service de reservation MMI !</h1>
                 <p>Bonne nouvelle, votre compte a été validé par un administrateur.</p>
                 <p>Vous pouvez maintenant vous connecter et réserver du matériel.</p>
                 <a href="${process.env.NEXT_PUBLIC_APP_URL}/auth/login">Se connecter</a>
@@ -293,3 +293,41 @@ export async function approveUser(targetUserId: string, targetEmail: string) {
     revalidatePath("/", "layout");
     return { success: true };
 }
+
+
+export async function rejectUser(targetUserId: string, targetEmail: string) {
+    const supabase = await createClient();
+
+    // 1. Vérif Admin
+    const { data: { user } } = await supabase.auth.getUser();
+    // (Tu peux ajouter une vérif de rôle ici si tu veux sécuriser à 100%)
+
+    // 2. Envoi email de refus (facultatif, mais sympa)
+    try {
+        await resend.emails.send({
+            from: 'onboarding@resend.dev',
+            to: targetEmail,
+            subject: '❌ Votre inscription a été refusée',
+            html: `
+                <h1>Inscription refusée</h1>
+                <p>Bonjour,</p>
+                <p>Votre demande d'accès au Magasin MMI n'a pas été retenue par l'administrateur.</p>
+                <p>Si vous pensez qu'il s'agit d'une erreur, contactez un responsable.</p>
+            `
+        });
+    } catch (e) {
+        console.error("Erreur email refus:", e);
+    }
+
+    // 3. Suppression du profil
+    const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", targetUserId);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/admin/users");
+    return { success: true };
+}
+

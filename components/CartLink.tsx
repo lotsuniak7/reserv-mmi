@@ -13,8 +13,7 @@ export default function CartLink() {
             href="/panier"
             className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-[var(--primary)] rounded-full text-sm font-medium hover:bg-indigo-100 transition"
         >
-            <ShoppingCart size={16} />
-            <span>Panier ({cart.length})</span>
+            <span>Réservation en cours ({cart.length})</span>
         </Link>
     );
 }

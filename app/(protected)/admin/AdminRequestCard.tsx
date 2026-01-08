@@ -38,7 +38,10 @@ export default function AdminRequestCard({ request }: { request: any }) {
                     </div>
                     <div>
                         <div className="font-bold text-slate-800">Dossier #{request.id}</div>
-                        <div className="text-xs text-slate-500 font-mono">User: {request.user_id.slice(0,8)}...</div>
+                        <div className="text-xs text-slate-500 font-mono">User: <span className="font-semibold text-slate-700">
+                                {request.profiles?.full_name || request.profiles?.email || "Utilisateur inconnu"}
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <div className="text-sm text-slate-500 flex items-center gap-2">

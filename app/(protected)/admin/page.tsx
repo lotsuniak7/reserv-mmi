@@ -12,6 +12,10 @@ export default async function AdminPage() {
         .from("requests")
         .select(`
             *,
+            profiles (
+                full_name,
+                email
+            ),
             reservations (
                 id, date_debut, date_fin, quantity, statut, message,
                 instruments ( name, image_url )

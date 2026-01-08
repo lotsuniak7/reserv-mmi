@@ -37,6 +37,13 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         .eq("id", user.id)
         .single();
 
+    // --- ДОБАВИТЬ ЭТОТ БЛОК ДЛЯ ПРОВЕРКИ ---
+    console.log("🔍 DEBUG LAYOUT:");
+    console.log("User ID:", user.id);
+    console.log("Profile Data:", profile);
+    console.log("Profile Error:");
+    // ---------------------------------------
+
     // Если профиля нет (ошибка) или он не одобрен
     if (!profile || !profile.is_approved) {
         // Функция выхода для заблокированного пользователя

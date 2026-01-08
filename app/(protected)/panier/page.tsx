@@ -35,12 +35,12 @@ export default function CartPage() {
     }
 
     if (cart.length === 0) {
-        return <div className="p-10 text-center">Votre panier est vide.</div>;
+        return <div className="p-10 text-center">Vous n'avez aucune réservation</div>;
     }
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 p-4">
-            <h1 className="text-3xl font-bold">Mon Panier ({cart.length})</h1>
+            <h1 className="text-3xl font-bold">Vos réservation en cours ({cart.length})</h1>
 
             <div className="space-y-4">
                 {cart.map((item) => (
