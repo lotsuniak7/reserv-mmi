@@ -1,94 +1,100 @@
 import { createClient } from "@/lib/supabase/server";
-import { Check, ShieldCheck, XCircle, Trash2 } from "lucide-react"; // J'ai ajouté Trash2
-import { approveUser, rejectUser } from "@/app/actions"; // N'oublie pas d'importer rejectUser
+import { ShieldCheck, ArrowLeft, Clock } from "lucide-react";
+import Link from "next/link";
+import UserActions from "@/components/admin/UserActions"; // Import du nouveau composant
 
+/**
+ * Page Gestion des Utilisateurs (/admin/users).
+ * Affiche la liste de tous les inscrits (validés ou en attente).
+ */
 export default async function AdminUsersPage() {
     const supabase = await createClient();
 
+    // Récupération des profils triés : les non-approuvés en premier, puis par date récente
     const { data: profiles } = await supabase
         .from("profiles")
         .select("*")
-        .order("is_approved", { ascending: true })
+        .order("is_approved", { ascending: true }) // false (en attente) d'abord
         .order("created_at", { ascending: false });
 
     return (
-        <div className="max-w-5xl mx-auto p-6 space-y-6">
-            <h1 className="text-3xl font-bold">Gestion des utilisateurs</h1>
+        <div className="max-w-6xl mx-auto p-6 space-y-8">
 
-            <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-                <table className="w-full text-left">
-                    <thead className="bg-slate-50 border-b text-xs uppercase text-slate-500">
+            {/* En-tête avec navigation */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-6 gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-slate-900">Gestion des utilisateurs</h1>
+                    <p className="text-slate-500 mt-1">Validez les nouvelles inscriptions ou gérez les membres.</p>
+                </div>
+                <Link
+                    href="/admin"
+                    className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg transition"
+                >
+                    <ArrowLeft size={16} />
+                    Retour au tableau de bord
+                </Link>
+            </div>
+
+            {/* Tableau des utilisateurs */}
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                <table className="w-full text-left border-collapse">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500 font-semibold tracking-wider">
                     <tr>
                         <th className="px-6 py-4">Nom / Email</th>
                         <th className="px-6 py-4">Date inscription</th>
                         <th className="px-6 py-4">Statut</th>
-                        <th className="px-6 py-4 text-right">Action</th>
+                        <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y divide-slate-100">
                     {profiles?.map((profile) => (
-                        <tr key={profile.id} className="hover:bg-slate-50">
+                        <tr key={profile.id} className="hover:bg-slate-50/80 transition-colors">
+
+                            {/* Colonne Identité */}
                             <td className="px-6 py-4">
-                                <div className="font-bold text-slate-800">{profile.full_name || "Sans nom"}</div>
-                                <div className="text-sm text-slate-500">{profile.email}</div>
+                                <div className="font-bold text-slate-800">{profile.full_name || "Utilisateur sans nom"}</div>
+                                <div className="text-xs text-slate-500 font-mono mt-0.5">{profile.email}</div>
                             </td>
-                            <td className="px-6 py-4 text-sm text-slate-500">
-                                {new Date(profile.created_at).toLocaleDateString("fr-FR")}
+
+                            {/* Colonne Date */}
+                            <td className="px-6 py-4 text-sm text-slate-600">
+                                {new Date(profile.created_at).toLocaleDateString("fr-FR", {
+                                    day: 'numeric', month: 'short', year: 'numeric'
+                                })}
                             </td>
+
+                            {/* Colonne Statut */}
                             <td className="px-6 py-4">
                                 {profile.is_approved ? (
-                                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold uppercase">
-                                            <ShieldCheck size={14} /> Validé
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-bold uppercase tracking-wide">
+                                        <ShieldCheck size={14} /> Validé
                                     </span>
                                 ) : (
-                                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold uppercase">
-                                            ⏳ En attente
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-xs font-bold uppercase tracking-wide">
+                                        <Clock size={14} /> En attente
                                     </span>
                                 )}
                             </td>
+
+                            {/* Colonne Actions (Composant Client) */}
                             <td className="px-6 py-4 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                    {!profile.is_approved && (
-                                        <>
-                                            {/* Bouton VALIDER */}
-                                            <form action={async () => {
-                                                "use server";
-                                                await approveUser(profile.id, profile.email);
-                                            }}>
-                                                <button className="px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-700 transition flex items-center gap-2">
-                                                    <Check size={14}/> Valider
-                                                </button>
-                                            </form>
-
-                                            {/* Bouton REFUSER (Nouveau) */}
-                                            <form action={async () => {
-                                                "use server";
-                                                await rejectUser(profile.id, profile.email);
-                                            }}>
-                                                <button className="px-3 py-2 bg-red-50 text-red-600 border border-red-200 text-xs font-bold rounded-lg hover:bg-red-100 transition flex items-center gap-2">
-                                                    <XCircle size={14}/> Refuser
-                                                </button>
-                                            </form>
-                                        </>
-                                    )}
-
-                                    {/* Optionnel : Bouton Poubelle pour les utilisateurs déjà validés si tu veux pouvoir les virer plus tard */}
-                                    {profile.is_approved && (
-                                        <form action={async () => {
-                                            "use server";
-                                            if(confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) {
-                                                await rejectUser(profile.id, profile.email);
-                                            }
-                                        }}>
-                                            <button className="p-2 text-slate-400 hover:text-red-600 transition">
-                                                <Trash2 size={16}/>
-                                            </button>
-                                        </form>
-                                    )}
-                                </div>
+                                <UserActions
+                                    userId={profile.id}
+                                    userEmail={profile.email}
+                                    isApproved={profile.is_approved}
+                                />
                             </td>
                         </tr>
                     ))}
+
+                    {/* État vide */}
+                    {(!profiles || profiles.length === 0) && (
+                        <tr>
+                            <td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">
+                                Aucun utilisateur inscrit pour le moment.
+                            </td>
+                        </tr>
+                    )}
                     </tbody>
                 </table>
             </div>

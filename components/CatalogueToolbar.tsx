@@ -50,7 +50,7 @@ export default function CatalogueToolbar({ items, categories }: Props) {
         const params = new URLSearchParams(searchParams.toString());
         if (start) params.set("start", start); else params.delete("start");
         if (end) params.set("end", end); else params.delete("end");
-        router.push(`/?${params.toString()}`);
+        router.push(`/catalogue?${params.toString()}`);
     }
 
     const onStartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,7 +68,7 @@ export default function CatalogueToolbar({ items, categories }: Props) {
     const clearDates = () => {
         setDateStart("");
         setDateEnd("");
-        router.push("/");
+        router.push("/catalogue");
     };
 
     // 1. Сначала фильтруем весь список
