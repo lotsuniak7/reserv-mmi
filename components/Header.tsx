@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import LogoutButton from "@/components/auth/LogoutButton";
+import LogoutButton from "@/components/LogoutButton";
 import CartLink from "@/components/CartLink"; // <--- Импортируем наш компонент
 
 export default async function Header() {

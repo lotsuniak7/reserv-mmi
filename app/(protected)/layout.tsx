@@ -5,7 +5,7 @@ import { createServerClient } from "@supabase/ssr";
 import { redirect } from "next/navigation";
 // Новые импорты для экрана блокировки
 import { Lock } from "lucide-react";
-import LogoutButton from "@/components/auth/LogoutButton";
+import LogoutButton from "@/components/LogoutButton";
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
     const cookieStore = await cookies();
