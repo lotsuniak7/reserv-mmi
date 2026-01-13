@@ -1,102 +1,111 @@
-// Page d'inscription — sans validations strictes (tout peut faire 1 caractère)
-// NOTE FUTUR: ici on pourra brancher Zod et mettre "min: 6" pour le mot de passe.
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 
-// ✅ Correction Next.js 15 : searchParams est maintenant une Promise
-export default async function SignupPage(props: { searchParams: Promise<{ error?: string }> }) {
+type Props = {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+/**
+ * Page d'Inscription (Signup).
+ * Crée un nouvel utilisateur dans Supabase Auth et déclenche le trigger SQL de création de profil.
+ */
+export default async function SignupPage(props: Props) {
     const searchParams = await props.searchParams;
+    const errorMessage = searchParams?.error;
 
+    /**
+     * Server Action : Gère la création du compte.
+     */
     async function signUp(formData: FormData) {
         "use server";
-        // ⚠️ Actuellement aucune contrainte dure; on accepte >= 1 caractère.
-        // TODO (plus tard): renforcer -> si longueur < 6 => afficher erreur.
+
         const full_name = String(formData.get("full_name") || "");
         const email = String(formData.get("email") || "");
         const password = String(formData.get("password") || "");
 
-        if (!email || !password) {
-            // garde-fou minimal: champs vides
-            redirect(`/auth/signup?error=${encodeURIComponent("Champs requis manquants.")}`);
+        if (!email || !password || !full_name) {
+            redirect(`/auth/signup?error=${encodeURIComponent("Tous les champs sont requis.")}`);
         }
 
-        const cookieStore = await cookies();
-        const supabase = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-            {
-                cookies: {
-                    // ✅ НОВЫЙ ПРАВИЛЬНЫЙ СПОСОБ:
-                    getAll() {
-                        return cookieStore.getAll();
-                    },
-                    setAll(cookiesToSet) {
-                        try {
-                            cookiesToSet.forEach(({ name, value, options }) =>
-                                cookieStore.set(name, value, options)
-                            );
-                        } catch {
-                            // Игнорируем ошибку, если вызываем из Server Componen
-                        }
-                    },
-                },
-            }
-        );
+        const supabase = await createClient();
 
+        // Inscription de l'utilisateur
         const { error } = await supabase.auth.signUp({
             email,
-            password, // NOTE FUTUR: exiger "min 6" ici quand on sera prêt.
-            options: { data: { role: "etudiant", full_name } }, // stocké dans user_metadata
+            password,
+            options: {
+                // Ces métadonnées seront copiées dans la table 'profiles' grâce à notre trigger SQL
+                data: {
+                    full_name: full_name,
+                    role: "etudiant" // Rôle par défaut
+                }
+            },
         });
 
         if (error) {
             redirect(`/auth/signup?error=${encodeURIComponent(error.message)}`);
         }
 
-        // Si la confirmation e-mail est activée dans Supabase Auth:
-        // l'utilisateur devra valider par mail; on renvoie vers la connexion.
-        redirect("/auth/login");
+        // Si l'inscription réussit, on redirige vers le login (ou vers une page "Vérifiez vos emails")
+        redirect("/auth/login?error=" + encodeURIComponent("Compte créé ! Connectez-vous."));
     }
 
     return (
-        <form action={signUp} className="card p-6 space-y-4">
-            <h1 className="text-2xl font-semibold">Créer un compte</h1>
+        <form action={signUp} className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 space-y-6">
+            <div className="text-center">
+                <h1 className="text-2xl font-bold text-slate-900">Créer un compte</h1>
+                <p className="text-sm text-slate-500 mt-2">Rejoignez le département MMI</p>
+            </div>
 
-            {searchParams?.error && (
-                <div className="p-3 rounded-md text-sm" style={{ background:"#fee2e2", color:"#991b1b" }}>
-                    {searchParams.error}
+            {errorMessage && (
+                <div className="p-3 rounded-md text-sm bg-blue-50 text-blue-700 border border-blue-200 text-center">
+                    {errorMessage}
                 </div>
             )}
 
-            <div className="space-y-1">
-                <label className="text-sm">Nom complet</label>
-                <input name="full_name" type="text" placeholder="Jean Dupont"
-                       className="border rounded-md px-3 py-2 w-full" />
-                {/* NOTE FUTUR: exiger min 2 caractères ici */}
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Nom complet</label>
+                <input
+                    name="full_name"
+                    type="text"
+                    placeholder="Jean Dupont"
+                    className="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                    required
+                />
             </div>
 
-            <div className="space-y-1">
-                <label className="text-sm">Adresse e-mail</label>
-                <input name="email" type="email" placeholder="prenom.nom@exemple.fr"
-                       className="border rounded-md px-3 py-2 w-full" />
-                {/* NOTE FUTUR: valider format e-mail avec Zod */}
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Adresse e-mail</label>
+                <input
+                    name="email"
+                    type="email"
+                    placeholder="prenom.nom@exemple.fr"
+                    className="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                    required
+                />
             </div>
 
-            <div className="space-y-1">
-                <label className="text-sm">Mot de passe</label>
-                <input name="password" type="password" className="border rounded-md px-3 py-2 w-full" />
-                {/* NOTE FUTUR: imposer ">= 6 caractères" ici */}
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Mot de passe</label>
+                <input
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                    required
+                />
             </div>
 
-            <button type="submit"
-                    className="px-4 py-2 rounded-lg text-white hover:opacity-90 transition"
-                    style={{ background:"var(--primary)" }}>
+            <button
+                type="submit"
+                className="w-full bg-slate-900 text-white font-semibold py-2.5 rounded-lg hover:bg-slate-800 transition shadow-md hover:shadow-lg"
+            >
                 S’inscrire
             </button>
 
-            <p className="text-sm text-[var(--text-secondary)]">
-                Déjà un compte ? <a href="/auth/login" className="underline">Se connecter</a>
+            <p className="text-center text-sm text-slate-500">
+                Déjà un compte ? <Link href="/auth/login" className="text-indigo-600 hover:underline font-medium">Se connecter</Link>
             </p>
         </form>
     );

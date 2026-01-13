@@ -1,83 +1,99 @@
-// Page de connexion — simple, sans contraintes strictes
-// NOTE FUTUR: ajouter Zod plus tard (email valide, mot de passe min 6).
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/server"; // On utilise notre helper centralisé
+import Link from "next/link";
 
-// ✅ Correction Next.js 15 : searchParams est maintenant une Promise
-export default async function LoginPage(props: { searchParams: Promise<{ error?: string }> }) {
+// Définition du type des props pour la compatibilité Next.js 15
+type Props = {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+/**
+ * Page de Connexion (Login).
+ * Gère l'authentification des utilisateurs existants via email/mot de passe.
+ */
+export default async function LoginPage(props: Props) {
+    // Dans Next.js 15, les paramètres d'URL sont asynchrones, il faut les attendre.
     const searchParams = await props.searchParams;
+    const errorMessage = searchParams?.error;
 
+    /**
+     * Server Action : Gère la soumission du formulaire de connexion.
+     * S'exécute exclusivement sur le serveur pour la sécurité.
+     */
     async function signIn(formData: FormData) {
         "use server";
+
         const email = String(formData.get("email") || "");
         const password = String(formData.get("password") || "");
 
+        // Validation basique côté serveur
         if (!email || !password) {
-            redirect(`/auth/login?error=${encodeURIComponent("Champs requis manquants.")}`);
+            redirect(`/auth/login?error=${encodeURIComponent("Email et mot de passe requis.")}`);
         }
 
-        const cookieStore = await cookies();
-        const supabase = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-            {
-                cookies: {
-                    // ✅ НОВЫЙ ПРАВИЛЬНЫЙ СПОСОБ:
-                    getAll() {
-                        return cookieStore.getAll();
-                    },
-                    setAll(cookiesToSet) {
-                        try {
-                            cookiesToSet.forEach(({ name, value, options }) =>
-                                cookieStore.set(name, value, options)
-                            );
-                        } catch {
-                            // Игнорируем ошибку, если вызываем из Server Componen
-                        }
-                    },
-                },
-            }
-        );
+        // Initialisation du client Supabase (utilise les cookies httpOnly)
+        const supabase = await createClient();
 
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        // Tentative de connexion via l'API Auth de Supabase
+        const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
         if (error) {
+            // En cas d'erreur (ex: mauvais mot de passe), on recharge la page avec le message
             redirect(`/auth/login?error=${encodeURIComponent(error.message)}`);
         }
-        redirect("/"); // après connexion => vers la page principale protégée
+
+        // Succès : Redirection vers la page d'accueil (protégée)
+        redirect("/");
     }
 
     return (
-        <form action={signIn} className="card p-6 space-y-4">
-            <h1 className="text-2xl font-semibold">Connexion</h1>
+        <form action={signIn} className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 space-y-6">
+            <div className="text-center">
+                <h1 className="text-2xl font-bold text-slate-900">Connexion</h1>
+                <p className="text-sm text-slate-500 mt-2">Accédez au catalogue MMI</p>
+            </div>
 
-            {searchParams?.error && (
-                <div className="p-3 rounded-md text-sm" style={{ background:"#fee2e2", color:"#991b1b" }}>
-                    {searchParams.error}
+            {/* Affichage des erreurs s'il y en a */}
+            {errorMessage && (
+                <div className="p-3 rounded-md text-sm bg-red-50 text-red-700 border border-red-200 text-center">
+                    {errorMessage}
                 </div>
             )}
 
-            <div className="space-y-1">
-                <label className="text-sm">Adresse e-mail</label>
-                <input name="email" type="email" placeholder="prenom.nom@exemple.fr"
-                       className="border rounded-md px-3 py-2 w-full" />
-                {/* NOTE FUTUR: valider format e-mail avec Zod */}
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Adresse e-mail</label>
+                <input
+                    name="email"
+                    type="email"
+                    placeholder="prenom.nom@exemple.fr"
+                    className="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                    required
+                />
             </div>
 
-            <div className="space-y-1">
-                <label className="text-sm">Mot de passe</label>
-                <input name="password" type="password" className="border rounded-md px-3 py-2 w-full" />
-                {/* NOTE FUTUR: imposer ">= 6 caractères" ici */}
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Mot de passe</label>
+                <input
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                    required
+                />
             </div>
 
-            <button type="submit"
-                    className="px-4 py-2 rounded-lg text-white hover:opacity-90 transition"
-                    style={{ background:"var(--primary)" }}>
+            <button
+                type="submit"
+                className="w-full bg-slate-900 text-white font-semibold py-2.5 rounded-lg hover:bg-slate-800 transition shadow-md hover:shadow-lg"
+            >
                 Se connecter
             </button>
 
-            <p className="text-sm text-[var(--text-secondary)]">
-                Pas de compte ? <a href="/auth/signup" className="underline">S’inscrire</a>
+            <p className="text-center text-sm text-slate-500">
+                Pas de compte ? <Link href="/auth/signup" className="text-indigo-600 hover:underline font-medium">S’inscrire</Link>
             </p>
         </form>
     );
