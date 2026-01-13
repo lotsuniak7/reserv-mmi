@@ -46,7 +46,7 @@ export default function LandingPage() {
                     <div className="flex items-center justify-between h-20">
 
                         {/* LOGO & MARQUE */}
-                        <a href="/" className="flex items-center gap-3 group">
+                        <a href="/catalogue" className="flex items-center gap-3 group">
                             <div className="relative">
                                 {/* Petit point animé pour signifier "En ligne/Actif" */}
                                 <div className="w-2 h-2 bg-indigo-500 rounded-full absolute -top-1 -right-1 animate-pulse"></div>
@@ -138,31 +138,46 @@ export default function LandingPage() {
                             </div>
                         </div>
 
-                        {/* Colonne Droite : Visuel Abstrait (Design pur) */}
+                        {/* Colonne Droite - Grille de cartes visuelles avec animations 3D */}
                         <div className="relative hidden lg:block">
                             <div className="relative aspect-square">
-                                <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 to-transparent rounded-2xl"></div>
+                                {/* Background glow */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-indigo-100/60 to-purple-100/40 rounded-3xl blur-3xl"></div>
+
                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full flex items-center justify-center">
                                     <div className="relative">
-                                        {/* Effet de Halo flou */}
-                                        <div className="absolute inset-0 bg-indigo-200/30 backdrop-blur-3xl rounded-full blur-3xl scale-150"></div>
+                                        {/* Halo central */}
+                                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-300/20 to-purple-300/20 backdrop-blur-3xl rounded-full blur-3xl scale-150"></div>
 
-                                        {/* Grille d'icônes flottantes */}
+                                        {/* Grille de cartes équipement */}
                                         <div className="relative space-y-6">
+                                            {/* Première ligne */}
                                             <div className="flex items-center gap-6 justify-end">
-                                                <div className="w-24 h-24 border border-slate-200 bg-white/80 backdrop-blur flex items-center justify-center hover:border-indigo-300 hover:shadow-md transition-all">
-                                                    <Camera className="w-10 h-10 text-slate-600" strokeWidth={1.5} />
+                                                {/* Carte Caméra */}
+                                                <div className="group w-24 h-24 border-2 border-slate-200 bg-white/90 backdrop-blur-xl rounded-2xl flex items-center justify-center hover:border-indigo-400 hover:shadow-2xl hover:shadow-indigo-200/50 hover:-translate-y-3 hover:rotate-6 transition-all duration-500 cursor-pointer relative overflow-hidden">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                                    <Camera className="w-10 h-10 text-slate-600 group-hover:text-indigo-600 group-hover:scale-110 transition-all duration-500 relative z-10" strokeWidth={1.5} />
                                                 </div>
-                                                <div className="w-32 h-32 border border-slate-200 bg-white/80 backdrop-blur flex items-center justify-center hover:border-indigo-300 hover:shadow-md transition-all">
-                                                    <Video className="w-14 h-14 text-slate-600" strokeWidth={1.5} />
+
+                                                {/* Carte Vidéo */}
+                                                <div className="group w-32 h-32 border-2 border-slate-200 bg-white/90 backdrop-blur-xl rounded-2xl flex items-center justify-center hover:border-indigo-400 hover:shadow-2xl hover:shadow-indigo-200/50 hover:-translate-y-3 hover:rotate-6 transition-all duration-500 cursor-pointer relative overflow-hidden">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                                    <Video className="w-14 h-14 text-slate-600 group-hover:text-indigo-600 group-hover:scale-110 transition-all duration-500 relative z-10" strokeWidth={1.5} />
                                                 </div>
                                             </div>
+
+                                            {/* Deuxième ligne */}
                                             <div className="flex items-center gap-6">
-                                                <div className="w-32 h-32 border border-slate-200 bg-white/80 backdrop-blur flex items-center justify-center hover:border-indigo-300 hover:shadow-md transition-all">
-                                                    <Mic className="w-14 h-14 text-slate-600" strokeWidth={1.5} />
+                                                {/* Carte Micro */}
+                                                <div className="group w-32 h-32 border-2 border-slate-200 bg-white/90 backdrop-blur-xl rounded-2xl flex items-center justify-center hover:border-indigo-400 hover:shadow-2xl hover:shadow-indigo-200/50 hover:-translate-y-3 hover:rotate-6 transition-all duration-500 cursor-pointer relative overflow-hidden">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                                    <Mic className="w-14 h-14 text-slate-600 group-hover:text-indigo-600 group-hover:scale-110 transition-all duration-500 relative z-10" strokeWidth={1.5} />
                                                 </div>
-                                                <div className="w-24 h-24 border border-slate-200 bg-white/80 backdrop-blur flex items-center justify-center hover:border-indigo-300 hover:shadow-md transition-all">
-                                                    <Box className="w-10 h-10 text-slate-600" strokeWidth={1.5} />
+
+                                                {/* Carte Accessoires */}
+                                                <div className="group w-24 h-24 border-2 border-slate-200 bg-white/90 backdrop-blur-xl rounded-2xl flex items-center justify-center hover:border-indigo-400 hover:shadow-2xl hover:shadow-indigo-200/50 hover:-translate-y-3 hover:rotate-6 transition-all duration-500 cursor-pointer relative overflow-hidden">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                                    <Box className="w-10 h-10 text-slate-600 group-hover:text-indigo-600 group-hover:scale-110 transition-all duration-500 relative z-10" strokeWidth={1.5} />
                                                 </div>
                                             </div>
                                         </div>
