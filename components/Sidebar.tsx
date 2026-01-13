@@ -8,7 +8,7 @@ export default function Sidebar({ role }: { role?: string }) {
     const [isOpen, setIsOpen] = useState(false);
 
     const navLinks = [
-        { href: "/", label: "Matériels" }, // Исправил ссылку на /
+        { href: "/catalogue", label: "Matériels" },
         { href: "/mes-reservations", label: "Mes réservations" },
         // Ссылка на админку только если роль === 'admin'
         ...(role === 'admin' ? [{ href: "/admin", label: "Administration" }] : []),

@@ -46,7 +46,7 @@ export default async function LoginPage(props: Props) {
         }
 
         // Succès : Redirection vers la page d'accueil (protégée)
-        redirect("/");
+        redirect("/catalogue");
     }
 
     return (
