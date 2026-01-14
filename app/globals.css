@@ -1,69 +1,54 @@
 @import "tailwindcss";
 
+/* Configuration globale des variables (optionnel si on utilise tout en classes utilitaires) */
 :root {
-    --primary: #4F46E5;
-    --primary-dark: #4338CA;
-    --secondary: #06B6D4;
-    --background: #ffffff;
-    --surface: #f8fafc;
-    --card: #ffffff;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --border: #e2e8f0;
-    --success: #10b981;
-    --error: #ef4444;
-    --warning: #f59e0b;
-    --radius: 12px;
+    --foreground-rgb: 15, 23, 42; /* Slate 900 */
+    --background-rgb: 248, 250, 252; /* Slate 50 */
 }
 
-[data-theme="dark"] {
-    --primary: #6366F1;
-    --primary-dark: #4F46E5;
-    --secondary: #22D3EE;
-    --background: #0f172a;
-    --surface: #1e293b;
-    --card: #1e293b;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --border: #334155;
-}
-
-html, body {
-    height: 100%;
-}
-
+/* Application des styles de base */
 body {
-    background: var(--background);
-    color: var(--text-primary);
-    font-family: system-ui, -apple-system, sans-serif;
+    color: rgb(var(--foreground-rgb));
+    background: rgb(var(--background-rgb));
+    font-family: Arial, Helvetica, sans-serif;
+    /* Lissage des polices pour un rendu plus net */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-/* Карточки */
-.card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: calc(var(--radius));
-    transition: box-shadow 0.2s ease;
+/* --- SCROLLBAR PERSONNALISÉE (Style Slate) --- */
+/* Pour Chrome, Edge et Safari */
+
+/* Largeur de la barre */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
 
-.card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-/* Скроллбар для сайдбара */
-aside::-webkit-scrollbar {
-    width: 6px;
-}
-
-aside::-webkit-scrollbar-track {
+/* Le fond de la barre (transparent pour être discret) */
+::-webkit-scrollbar-track {
     background: transparent;
 }
 
-aside::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 3px;
+/* La "poignée" de la barre */
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
 }
 
-aside::-webkit-scrollbar-thumb:hover {
-    background: var(--text-secondary);
+/* La poignée au survol */
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+/* --- UTILITAIRES D'ANIMATION (Optionnel, pour les modales) --- */
+@layer utilities {
+    .animate-in {
+        animation-duration: 200ms;
+        animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    }
 }

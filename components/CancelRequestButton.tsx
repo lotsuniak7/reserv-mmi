@@ -47,7 +47,7 @@ export default function CancelRequestButton({ reservationIds }: { reservationIds
             ) : (
                 <Trash2 size={16} />
             )}
-            Annuler la demande complète
+            Annuler la demande
         </button>
     );
 }

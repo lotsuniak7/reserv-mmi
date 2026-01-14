@@ -1,4 +1,3 @@
-// app/actions.ts
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
@@ -6,7 +5,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Resend } from 'resend';
 
-// Тип товара из корзины
+// Initialisation du client Email (Resend)
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Type pour les articles venant du panier
 type CartItemPayload = {
     id: number;
     quantity: number;
@@ -14,29 +16,41 @@ type CartItemPayload = {
     endDate: string;
 };
 
-// 1. Создание ЗАЯВКИ (Папки) с товарами
+/* ==========================================================================
+   1. GESTION DES RÉSERVATIONS (Côté Étudiant)
+   ========================================================================== */
+
+/**
+ * Soumettre une demande de réservation (Panier).
+ * Crée un dossier "Request" et y attache les lignes "Reservations".
+ * Vérifie les stocks et les dates avant insertion.
+ */
 export async function submitCartReservation(items: CartItemPayload[], globalMessage: string) {
     const supabase = await createClient();
+
+    // 1. Vérifier l'authentification
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Non authentifié" };
+    if (!user) return { error: "Vous devez être connecté." };
 
     if (items.length === 0) return { error: "Le panier est vide." };
 
+    // 2. Configuration des dates limites
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const maxDate = new Date();
     maxDate.setFullYear(maxDate.getFullYear() + 1);
 
-    // --- ПРОВЕРКА ДАТ И КОЛИЧЕСТВА ---
+    // 3. Vérifications (Dates & Stocks) pour chaque article
     for (const item of items) {
         const start = new Date(item.startDate);
         const end = new Date(item.endDate);
 
         if (start < today) return { error: `Date passée pour l'article #${item.id}.` };
-        if (end < start) return { error: `Date fin avant début pour l'article #${item.id}.` };
-        if (end > maxDate) return { error: `Réservation > 1 an pour l'article #${item.id}.` };
+        if (end < start) return { error: `La date de fin est avant le début pour l'article #${item.id}.` };
+        if (end > maxDate) return { error: `Réservation limitée à 1 an pour l'article #${item.id}.` };
 
+        // Récupération infos instrument
         const { data: instrument } = await supabase
             .from("instruments")
             .select("quantite, name")
@@ -45,13 +59,14 @@ export async function submitCartReservation(items: CartItemPayload[], globalMess
 
         if (!instrument) continue;
 
+        // Calcul du stock déjà réservé sur cette période
         const { data: reservations } = await supabase
             .from("reservations")
             .select("quantity")
             .eq("instrument_id", item.id)
             .neq("statut", "refusée")
-            .neq("statut", "terminée")
-            .lte("date_debut", item.endDate)
+            .neq("statut", "terminée") // On ignore les terminées si elles rendent le stock (à adapter selon ta logique)
+            .lte("date_debut", item.endDate) // Chevauchement de dates
             .gte("date_fin", item.startDate);
 
         const reservedCount = reservations?.reduce((sum, r) => sum + (r.quantity || 1), 0) || 0;
@@ -62,7 +77,7 @@ export async function submitCartReservation(items: CartItemPayload[], globalMess
         }
     }
 
-    // А. Сначала создаем "Папку" (Request)
+    // 4. Création du dossier (Request)
     const { data: request, error: reqError } = await supabase
         .from("requests")
         .insert({
@@ -73,13 +88,11 @@ export async function submitCartReservation(items: CartItemPayload[], globalMess
         .select()
         .single();
 
-    // ИСПРАВЛЕНИЕ ОШИБКИ ЗДЕСЬ:
-    // Мы безопасно проверяем, есть ли ошибка. Если reqError null, используем запасной текст.
     if (reqError || !request) {
-        return { error: "Erreur création dossier: " + (reqError?.message || "Erreur inconnue") };
+        return { error: "Erreur lors de la création du dossier : " + (reqError?.message || "Inconnue") };
     }
 
-    // Б. Готовим товары
+    // 5. Préparation des lignes de réservation
     const reservationsToInsert = items.map(item => ({
         user_id: user.id,
         instrument_id: item.id,
@@ -90,27 +103,67 @@ export async function submitCartReservation(items: CartItemPayload[], globalMess
         request_id: request.id
     }));
 
-    // В. Сохраняем товары
+    // 6. Insertion des lignes
     const { error: linesError } = await supabase.from("reservations").insert(reservationsToInsert);
 
     if (linesError) return { error: linesError.message };
 
+    // 7. Rafraîchissement des caches
     revalidatePath("/mes-reservations");
     revalidatePath("/admin");
 
     return { success: true };
 }
 
-// 2. Обновление статуса ОДНОЙ СТРОКИ (Для админа: галочка или крестик)
-export async function updateLineStatus(reservationId: number, newStatus: 'validée' | 'refusée', reason?: string) {
+/**
+ * Annuler une réservation (Côté Étudiant).
+ * Supprime la ligne si elle est encore "en attente".
+ */
+export async function cancelReservation(reservationId: number) {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (user?.user_metadata?.role !== 'admin') return { error: "Interdit" };
+    if (!user) throw new Error("Utilisateur non connecté");
+
+    // Suppression (RLS doit bloquer si ce n'est pas "en attente" ou si ce n'est pas le bon user)
+    const { error } = await supabase
+        .from("reservations")
+        .delete()
+        .eq("id", reservationId);
+
+    if (error) {
+        console.error("Erreur suppression:", error.message);
+        throw new Error(error.message);
+    }
+
+    revalidatePath("/mes-reservations");
+    revalidatePath("/admin");
+}
+
+/* ==========================================================================
+   2. GESTION ADMINISTRATIVE (Réservations)
+   ========================================================================== */
+
+/**
+ * Mettre à jour le statut d'une réservation (Admin).
+ * Gère la validation ou le refus avec motif.
+ */
+export async function updateReservationStatus(
+    reservationId: number,
+    newStatus: 'validée' | 'refusée',
+    reason?: string
+) {
+    const supabase = await createClient();
+
+    // Vérification Admin
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.user_metadata?.role !== 'admin') {
+        return { error: "Accès refusé. Réservé aux administrateurs." };
+    }
 
     const updateData: any = { statut: newStatus };
 
-    // Если отказ, записываем причину прямо в строку бронирования
+    // Si refus, on ajoute le motif
     if (newStatus === 'refusée' && reason) {
         updateData.message = reason;
     }
@@ -127,88 +180,35 @@ export async function updateLineStatus(reservationId: number, newStatus: 'valid�
     return { success: true };
 }
 
+/* ==========================================================================
+   3. GESTION DE L'INVENTAIRE (Admin)
+   ========================================================================== */
 
-// 3. Обновление статуса (Только для админов) + Причина отказа
-export async function updateReservationStatus(
-    reservationId: number,
-    newStatus: 'validée' | 'refusée',
-    reason?: string
-) {
-    const supabase = await createClient();
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user?.user_metadata?.role !== 'admin') {
-        return { error: "Accès refusé." };
-    }
-
-    // Формируем объект для обновления
-    const updateData: any = { statut: newStatus };
-
-    // Если это отказ и есть причина, обновляем поле message
-    // (Мы добавляем префикс "Refusé :", чтобы пользователю было понятно)
-    if (newStatus === 'refusée' && reason) {
-        updateData.message = `Refus : ${reason}`;
-    }
-
-    const { error } = await supabase
-        .from("reservations")
-        .update(updateData)
-        .eq("id", reservationId);
-
-    if (error) {
-        return { error: error.message };
-    }
-
-    revalidatePath("/admin");
-    revalidatePath("/mes-reservations");
-    return { success: true };
-}
-
-// ... существующий код ...
-
-// --- ИНВЕНТАРЬ (Только Админ) ---
-
-// 4. Удаление товара
-export async function deleteInstrument(id: number) {
-    const supabase = await createClient();
-
-    // Проверка прав
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user?.user_metadata?.role !== 'admin') return { error: "Interdit" };
-
-    const { error } = await supabase.from("instruments").delete().eq("id", id);
-
-    if (error) return { error: error.message };
-    revalidatePath("/admin/inventaire");
-    revalidatePath("/"); // Обновить каталог
-    return { success: true };
-}
-
-// 5. Создание товара
+/**
+ * Créer un nouveau matériel.
+ * Gère l'upload de l'image vers Supabase Storage.
+ */
 export async function createInstrument(formData: FormData) {
     const supabase = await createClient();
 
-    // 1. Vérification Admin
+    // Vérification Admin
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.user_metadata?.role !== 'admin') return { error: "Interdit" };
 
     const name = formData.get("name") as string;
     const categorie = formData.get("categorie") as string;
     const description = formData.get("description") as string;
-
-    // 2. Récupération du fichier image
     const imageFile = formData.get("image") as File;
-    let finalImageUrl = "";
 
     if (!name) return { error: "Le nom du matériel est obligatoire." };
 
-    // 3. Logique d'upload de l'image (si un fichier est fourni)
-    if (imageFile && imageFile.size > 0) {
-        // Créer un nom de fichier unique pour éviter les conflits (ex: 123456789-camera.jpg)
-        const fileName = `${Date.now()}-${imageFile.name}`;
+    let finalImageUrl = "";
 
-        // Upload vers le bucket "instruments"
-        const { data: uploadData, error: uploadError } = await supabase
+    // Upload de l'image
+    if (imageFile && imageFile.size > 0) {
+        const fileName = `${Date.now()}-${imageFile.name.replace(/\s/g, '_')}`; // Nettoyage du nom
+
+        const { error: uploadError } = await supabase
             .storage
             .from('instruments')
             .upload(fileName, imageFile, {
@@ -220,7 +220,7 @@ export async function createInstrument(formData: FormData) {
             return { error: "Erreur upload image : " + uploadError.message };
         }
 
-        // Récupérer l'URL publique pour la base de données
+        // Génération de l'URL publique
         const { data: publicUrlData } = supabase
             .storage
             .from('instruments')
@@ -229,11 +229,11 @@ export async function createInstrument(formData: FormData) {
         finalImageUrl = publicUrlData.publicUrl;
     }
 
-    // 4. Insertion en base de données avec l'URL de l'image
+    // Insertion en base
     const { error } = await supabase.from("instruments").insert({
         name,
         categorie,
-        image_url: finalImageUrl, // On enregistre le lien généré
+        image_url: finalImageUrl,
         description,
         status: "dispo",
         quantite: 1
@@ -242,11 +242,31 @@ export async function createInstrument(formData: FormData) {
     if (error) return { error: error.message };
 
     revalidatePath("/admin/inventaire");
+    revalidatePath("/"); // Met à jour le catalogue
+    return { success: true };
+}
+
+/**
+ * Supprimer un matériel.
+ */
+export async function deleteInstrument(id: number) {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.user_metadata?.role !== 'admin') return { error: "Interdit" };
+
+    const { error } = await supabase.from("instruments").delete().eq("id", id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/admin/inventaire");
     revalidatePath("/");
     return { success: true };
 }
 
-// 6. Получить бронирования для конкретного товара (для модального окна)
+/**
+ * Récupérer les réservations futures d'un instrument (Helper pour le calendrier).
+ */
 export async function getInstrumentReservations(id: number) {
     const supabase = await createClient();
 
@@ -260,19 +280,22 @@ export async function getInstrumentReservations(id: number) {
     return data || [];
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+/* ==========================================================================
+   4. GESTION DES UTILISATEURS (Admin)
+   ========================================================================== */
 
-// НОВАЯ ФУНКЦИЯ: Одобрить пользователя
+/**
+ * Approuver un utilisateur (Accès autorisé).
+ * Envoie un email de bienvenue via Resend.
+ */
 export async function approveUser(targetUserId: string, targetEmail: string) {
     const supabase = await createClient();
 
-    // 1. Проверка: Я админ?
+    // Vérification Admin
     const { data: { user } } = await supabase.auth.getUser();
-    // (Лучше проверять роль через профиль, но пока оставим как есть или через метаданные)
-    // const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
-    // if (profile?.role !== 'admin') return { error: "Non autorisé" };
+    if (user?.user_metadata?.role !== 'admin') return { error: "Non autorisé" };
 
-    // 2. Обновляем статус в базе
+    // Validation en base
     const { error } = await supabase
         .from("profiles")
         .update({ is_approved: true })
@@ -280,57 +303,59 @@ export async function approveUser(targetUserId: string, targetEmail: string) {
 
     if (error) return { error: error.message };
 
-    // 3. Отправляем письмо через Resend
+    // Envoi de l'email
     try {
         await resend.emails.send({
-            from: 'MMI Dijon <onboarding@resend.dev>', // Или твой домен
+            from: 'MMI Dijon <onboarding@resend.dev>', // Pense à vérifier ton domaine Resend
             to: targetEmail,
             subject: '✅ Votre compte a été validé !',
             html: `
-                <h1>Bienvenue au notre service de reservation MMI !</h1>
-                <p>Bonne nouvelle, votre compte a été validé par un administrateur.</p>
-                <p>Vous pouvez maintenant vous connecter et réserver du matériel.</p>
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/auth/login">Se connecter</a>
+                <div style="font-family: sans-serif; padding: 20px;">
+                    <h1>Bienvenue sur MMI Réservation !</h1>
+                    <p>Bonne nouvelle, votre compte a été validé par un administrateur.</p>
+                    <p>Vous pouvez dès maintenant vous connecter et réserver du matériel.</p>
+                    <a href="${process.env.NEXT_PUBLIC_APP_URL}/auth/login" style="display:inline-block; background:#4F46E5; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">Se connecter</a>
+                </div>
             `
         });
     } catch (e) {
-        console.error("Erreur email:", e);
-        // Не блокируем успех, если письмо не ушло
+        console.error("Erreur d'envoi d'email:", e);
     }
 
-    // renovle la liste d'utilisateurs
     revalidatePath("/admin/users");
-    // on vide le cache
-    revalidatePath("/", "layout");
     return { success: true };
 }
 
-
+/**
+ * Rejeter un utilisateur (Suppression du profil).
+ * Envoie un email de refus.
+ */
 export async function rejectUser(targetUserId: string, targetEmail: string) {
     const supabase = await createClient();
 
-    // 1. Vérif Admin
     const { data: { user } } = await supabase.auth.getUser();
-    // (Tu peux ajouter une vérif de rôle ici si tu veux sécuriser à 100%)
+    if (user?.user_metadata?.role !== 'admin') return { error: "Non autorisé" };
 
-    // 2. Envoi email de refus (facultatif, mais sympa)
+    // Envoi de l'email
     try {
         await resend.emails.send({
-            from: 'onboarding@resend.dev',
+            from: 'MMI Dijon <onboarding@resend.dev>',
             to: targetEmail,
-            subject: '❌ Votre inscription a été refusée',
+            subject: '❌ Inscription refusée',
             html: `
-                <h1>Inscription refusée</h1>
-                <p>Bonjour,</p>
-                <p>Votre demande d'accès au Magasin MMI n'a pas été retenue par l'administrateur.</p>
-                <p>Si vous pensez qu'il s'agit d'une erreur, contactez un responsable.</p>
+                <div style="font-family: sans-serif; padding: 20px;">
+                    <h1>Inscription refusée</h1>
+                    <p>Bonjour,</p>
+                    <p>Votre demande d'accès au magasin MMI n'a pas été retenue.</p>
+                    <p>Si vous pensez qu'il s'agit d'une erreur, veuillez contacter un responsable.</p>
+                </div>
             `
         });
     } catch (e) {
-        console.error("Erreur email refus:", e);
+        console.error("Erreur d'envoi d'email:", e);
     }
 
-    // 3. Suppression du profil
+    // Suppression du profil
     const { error } = await supabase
         .from("profiles")
         .delete()
@@ -342,54 +367,14 @@ export async function rejectUser(targetUserId: string, targetEmail: string) {
     return { success: true };
 }
 
-// app/actions/inventory.ts
-
-// ... autres imports
-// Ajoute cet import pour générer des noms de fichiers uniques (optionnel mais recommandé)
-// ou utilise simplement Date.now() comme je vais faire ci-dessous.
-
-
-// app/actions.ts
-
-
+/* ==========================================================================
+   5. AUTHENTIFICATION
+   ========================================================================== */
 
 /**
- * Action : Annuler une réservation (cancelReservation).
- * Supprime une ligne de réservation si l'utilisateur en est le propriétaire.
- * Met à jour le cache de la page pour refléter le changement immédiatement.
+ * Déconnexion (Sign Out).
  */
-export async function cancelReservation(reservationId: number) {
-    const supabase = await createClient();
-
-    // 1. On vérifie que l'utilisateur est connecté
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        throw new Error("Utilisateur non connecté");
-    }
-
-    // 2. Suppression de la réservation
-    // IMPORTANT : On supprime directement.
-    // La sécurité (RLS) côté Supabase doit empêcher de supprimer si ce n'est pas "en attente".
-    const { error } = await supabase
-        .from("reservations")
-        .delete()
-        .eq("id", reservationId);
-
-    if (error) {
-        console.error("Erreur suppression:", error.message);
-        throw new Error(error.message);
-    }
-
-    // 3. On rafraîchit les pages concernées
-    revalidatePath("/mes-reservations");
-    revalidatePath("/admin");
-}
-
-
-// В файл app/actions.ts добавь:
-
 export async function signOut() {
-    "use server";
     const supabase = await createClient();
     await supabase.auth.signOut();
     redirect("/auth/login");
