@@ -334,7 +334,13 @@ export async function rejectUser(targetUserId: string, targetEmail: string) {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
+    // 1. Vérification Admin
     if (user?.user_metadata?.role !== 'admin') return { error: "Non autorisé" };
+
+    // 2. PROTECTION ANTI-SUICIDE : On empêche l'admin de se supprimer lui-même
+    if (user.id === targetUserId) {
+        return { error: "Vous ne pouvez pas supprimer votre propre compte administrateur." };
+    }
 
     // Envoi de l'email
     try {

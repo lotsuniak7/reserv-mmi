@@ -6,16 +6,24 @@ import UserActions from "@/components/admin/UserActions"; // Import du nouveau c
 /**
  * Page Gestion des Utilisateurs (/admin/users).
  * Affiche la liste de tous les inscrits (validés ou en attente).
+ * L'admin connecté est masqué de la liste.
  */
 export default async function AdminUsersPage() {
     const supabase = await createClient();
 
-    // Récupération des profils triés : les non-approuvés en premier, puis par date récente
-    const { data: profiles } = await supabase
+    // 1. On récupère l'utilisateur connecté (l'admin actuel)
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // 2. Récupération des profils triés : les non-approuvés en premier, puis par date récente
+    const { data: rawProfiles } = await supabase
         .from("profiles")
         .select("*")
         .order("is_approved", { ascending: true }) // false (en attente) d'abord
         .order("created_at", { ascending: false });
+
+    // 3. FILTRAGE : On retire l'admin actuel de la liste
+    // Cela empêche l'admin de se voir et de se supprimer accidentellement.
+    const profiles = rawProfiles?.filter(p => p.id !== user?.id);
 
     return (
         <div className="max-w-6xl mx-auto p-6 space-y-8">
@@ -91,7 +99,7 @@ export default async function AdminUsersPage() {
                     {(!profiles || profiles.length === 0) && (
                         <tr>
                             <td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">
-                                Aucun utilisateur inscrit pour le moment.
+                                Aucun autre utilisateur inscrit pour le moment.
                             </td>
                         </tr>
                     )}
