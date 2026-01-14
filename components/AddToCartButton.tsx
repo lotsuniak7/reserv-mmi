@@ -2,40 +2,45 @@
 
 import { useState } from "react";
 import { useCart } from "@/lib/cart-context";
-import { ShoppingCart, Check, AlertCircle } from "lucide-react";
+import { ShoppingCart, Check, AlertCircle, PackageX } from "lucide-react";
 
-export default function AddToCartButton({
-                                            instrument,
-                                            availableQty,
-                                            dates,
-                                            onSuccess // <--- Новая функция обратного вызова
-                                        }: {
+type Props = {
     instrument: { id: number; name: string; image_url: string | null };
     availableQty: number;
     dates: { start: string; end: string } | null;
-    onSuccess?: () => void; // <--- Тип
-}) {
+    onSuccess?: () => void;
+};
+
+/**
+ * Bouton "Ajouter au panier".
+ * Gère la sélection de la quantité, les messages d'erreur et l'animation de succès.
+ */
+export default function AddToCartButton({ instrument, availableQty, dates, onSuccess }: Props) {
     const { addToCart } = useCart();
     const [qty, setQty] = useState(1);
     const [added, setAdded] = useState(false);
 
+    // CAS 1 : Dates non sélectionnées
     if (!dates) {
         return (
-            <div className="p-3 bg-amber-50 text-amber-800 text-xs rounded-lg flex gap-2">
-                <AlertCircle size={16} className="shrink-0" />
-                <span>Sélectionnez des dates ci-dessus.</span>
+            <div className="p-4 bg-amber-50 border border-amber-100 text-amber-800 text-xs rounded-xl flex items-center gap-3 animate-in fade-in">
+                <AlertCircle size={18} className="shrink-0" />
+                <span>Veuillez sélectionner une période de réservation ci-dessus.</span>
             </div>
         );
     }
 
+    // CAS 2 : Rupture de stock
     if (availableQty <= 0) {
         return (
-            <div className="p-3 bg-red-50 text-red-700 text-xs rounded-lg font-medium text-center">
-                Rupture de stock ❌
+            <div className="p-4 bg-red-50 border border-red-100 text-red-700 text-xs rounded-xl font-medium flex items-center justify-center gap-2 animate-in fade-in">
+                <PackageX size={18} />
+                Rupture de stock sur cette période.
             </div>
         );
     }
 
+    // Fonction d'ajout
     const handleAdd = () => {
         addToCart({
             id: instrument.id,
@@ -46,43 +51,60 @@ export default function AddToCartButton({
             startDate: dates.start,
             endDate: dates.end
         });
+
         setAdded(true);
 
-        // Ждем немного анимацию, потом вызываем onSuccess (закрытие окна)
+        // Fermeture automatique du modal après 1 seconde
         setTimeout(() => {
             setAdded(false);
             if (onSuccess) onSuccess();
         }, 1000);
     };
 
+    // CAS 3 : Affichage normal (Sélecteur Qté + Bouton)
     return (
-        <div className="space-y-3 animate-in fade-in">
-            <div className="flex items-center justify-between bg-slate-50 p-2 rounded-lg border">
-                <label className="text-xs font-bold text-[var(--text-secondary)] uppercase">Quantité</label>
+        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+
+            {/* Sélecteur de Quantité */}
+            <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Quantité</label>
                 <div className="flex items-center gap-2">
                     <select
                         value={qty}
                         onChange={(e) => setQty(Number(e.target.value))}
-                        className="p-1 rounded border text-sm bg-white outline-none"
+                        className="py-1 px-2 rounded-lg border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
                     >
                         {Array.from({ length: availableQty }).map((_, i) => (
                             <option key={i+1} value={i+1}>{i+1}</option>
                         ))}
                     </select>
-                    <span className="text-[10px] text-slate-400">/ {availableQty}</span>
+                    <span className="text-xs text-slate-400 font-medium">/ {availableQty} dispo</span>
                 </div>
             </div>
 
+            {/* Bouton d'action principal */}
             <button
                 onClick={handleAdd}
-                className={`w-full py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${
-                    added
-                        ? "bg-green-600 text-white"
-                        : "bg-[var(--text-primary)] text-white hover:opacity-90"
-                }`}
+                disabled={added}
+                className={`
+                    w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 shadow-sm
+                    ${added
+                    ? "bg-emerald-500 text-white scale-95" // État Succès (Vert)
+                    : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5" // État Normal (Indigo)
+                }
+                `}
             >
-                {added ? <Check size={18} /> : <ShoppingCart size={18} />}
-                {added ? "Ajouté !" : "Ajouter"}
+                {added ? (
+                    <>
+                        <Check size={20} strokeWidth={3} />
+                        Ajouté au panier !
+                    </>
+                ) : (
+                    <>
+                        <ShoppingCart size={20} />
+                        Ajouter au panier
+                    </>
+                )}
             </button>
         </div>
     );

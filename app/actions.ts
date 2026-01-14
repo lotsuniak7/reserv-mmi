@@ -127,27 +127,6 @@ export async function updateLineStatus(reservationId: number, newStatus: 'valid�
     return { success: true };
 }
 
-// 2. Отмена бронирования
-export async function cancelReservation(reservationId: number) {
-    const supabase = await createClient();
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) redirect("/auth/login");
-
-    // Удаляем только если это бронь текущего пользователя
-    const { error } = await supabase
-        .from("reservations")
-        .delete()
-        .eq("id", reservationId)
-        .eq("user_id", user.id);
-
-    if (error) {
-        return { error: error.message };
-    }
-
-    revalidatePath("/mes-reservations");
-    return { success: true };
-}
 
 // 3. Обновление статуса (Только для админов) + Причина отказа
 export async function updateReservationStatus(
@@ -368,3 +347,50 @@ export async function rejectUser(targetUserId: string, targetEmail: string) {
 // ... autres imports
 // Ajoute cet import pour générer des noms de fichiers uniques (optionnel mais recommandé)
 // ou utilise simplement Date.now() comme je vais faire ci-dessous.
+
+
+// app/actions.ts
+
+
+
+/**
+ * Action : Annuler une réservation (cancelReservation).
+ * Supprime une ligne de réservation si l'utilisateur en est le propriétaire.
+ * Met à jour le cache de la page pour refléter le changement immédiatement.
+ */
+export async function cancelReservation(reservationId: number) {
+    const supabase = await createClient();
+
+    // 1. On vérifie que l'utilisateur est connecté
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error("Utilisateur non connecté");
+    }
+
+    // 2. Suppression de la réservation
+    // IMPORTANT : On supprime directement.
+    // La sécurité (RLS) côté Supabase doit empêcher de supprimer si ce n'est pas "en attente".
+    const { error } = await supabase
+        .from("reservations")
+        .delete()
+        .eq("id", reservationId);
+
+    if (error) {
+        console.error("Erreur suppression:", error.message);
+        throw new Error(error.message);
+    }
+
+    // 3. On rafraîchit les pages concernées
+    revalidatePath("/mes-reservations");
+    revalidatePath("/admin");
+}
+
+
+// В файл app/actions.ts добавь:
+
+export async function signOut() {
+    "use server";
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+    redirect("/auth/login");
+}
