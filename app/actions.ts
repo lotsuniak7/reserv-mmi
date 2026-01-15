@@ -65,8 +65,8 @@ export async function submitCartReservation(items: CartItemPayload[], globalMess
             .select("quantity")
             .eq("instrument_id", item.id)
             .neq("statut", "refusée")
-            .neq("statut", "terminée") // On ignore les terminées si elles rendent le stock (à adapter selon ta logique)
-            .lte("date_debut", item.endDate) // Chevauchement de dates
+            .neq("statut", "terminée")
+            .lte("date_debut", item.endDate)
             .gte("date_fin", item.startDate);
 
         const reservedCount = reservations?.reduce((sum, r) => sum + (r.quantity || 1), 0) || 0;
@@ -111,6 +111,8 @@ export async function submitCartReservation(items: CartItemPayload[], globalMess
     // 7. Rafraîchissement des caches
     revalidatePath("/mes-reservations");
     revalidatePath("/admin");
+    revalidatePath("/catalogue");
+    revalidatePath("/");
 
     return { success: true };
 }
@@ -125,7 +127,6 @@ export async function cancelReservation(reservationId: number) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Utilisateur non connecté");
 
-    // Suppression (RLS doit bloquer si ce n'est pas "en attente" ou si ce n'est pas le bon user)
     const { error } = await supabase
         .from("reservations")
         .delete()
@@ -138,6 +139,8 @@ export async function cancelReservation(reservationId: number) {
 
     revalidatePath("/mes-reservations");
     revalidatePath("/admin");
+    revalidatePath("/catalogue");
+    revalidatePath("/");
 }
 
 /* ==========================================================================
@@ -146,7 +149,6 @@ export async function cancelReservation(reservationId: number) {
 
 /**
  * Mettre à jour le statut d'une réservation (Admin).
- * Gère la validation ou le refus avec motif.
  */
 export async function updateReservationStatus(
     reservationId: number,
@@ -155,7 +157,6 @@ export async function updateReservationStatus(
 ) {
     const supabase = await createClient();
 
-    // Vérification Admin
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.user_metadata?.role !== 'admin') {
         return { error: "Accès refusé. Réservé aux administrateurs." };
@@ -163,7 +164,6 @@ export async function updateReservationStatus(
 
     const updateData: any = { statut: newStatus };
 
-    // Si refus, on ajoute le motif
     if (newStatus === 'refusée' && reason) {
         updateData.message = reason;
     }
@@ -177,21 +177,20 @@ export async function updateReservationStatus(
 
     revalidatePath("/admin");
     revalidatePath("/mes-reservations");
+    revalidatePath("/catalogue");
     return { success: true };
 }
 
 /* ==========================================================================
-   3. GESTION DE L'INVENTAIRE (Admin)
+   3. GESTION DE L'INVENTAIRE (Admin & Helpers)
    ========================================================================== */
 
 /**
  * Créer un nouveau matériel.
- * Gère l'upload de l'image vers Supabase Storage.
  */
 export async function createInstrument(formData: FormData) {
     const supabase = await createClient();
 
-    // Vérification Admin
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.user_metadata?.role !== 'admin') return { error: "Interdit" };
 
@@ -204,9 +203,8 @@ export async function createInstrument(formData: FormData) {
 
     let finalImageUrl = "";
 
-    // Upload de l'image
     if (imageFile && imageFile.size > 0) {
-        const fileName = `${Date.now()}-${imageFile.name.replace(/\s/g, '_')}`; // Nettoyage du nom
+        const fileName = `${Date.now()}-${imageFile.name.replace(/\s/g, '_')}`;
 
         const { error: uploadError } = await supabase
             .storage
@@ -220,7 +218,6 @@ export async function createInstrument(formData: FormData) {
             return { error: "Erreur upload image : " + uploadError.message };
         }
 
-        // Génération de l'URL publique
         const { data: publicUrlData } = supabase
             .storage
             .from('instruments')
@@ -229,7 +226,6 @@ export async function createInstrument(formData: FormData) {
         finalImageUrl = publicUrlData.publicUrl;
     }
 
-    // Insertion en base
     const { error } = await supabase.from("instruments").insert({
         name,
         categorie,
@@ -242,7 +238,7 @@ export async function createInstrument(formData: FormData) {
     if (error) return { error: error.message };
 
     revalidatePath("/admin/inventaire");
-    revalidatePath("/"); // Met à jour le catalogue
+    revalidatePath("/");
     return { success: true };
 }
 
@@ -265,7 +261,7 @@ export async function deleteInstrument(id: number) {
 }
 
 /**
- * Récupérer les réservations futures d'un instrument (Helper pour le calendrier).
+ * Récupérer les réservations futures d'un instrument.
  */
 export async function getInstrumentReservations(id: number) {
     const supabase = await createClient();
@@ -284,18 +280,12 @@ export async function getInstrumentReservations(id: number) {
    4. GESTION DES UTILISATEURS (Admin)
    ========================================================================== */
 
-/**
- * Approuver un utilisateur (Accès autorisé).
- * Envoie un email de bienvenue via Resend.
- */
 export async function approveUser(targetUserId: string, targetEmail: string) {
     const supabase = await createClient();
 
-    // Vérification Admin
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.user_metadata?.role !== 'admin') return { error: "Non autorisé" };
 
-    // Validation en base
     const { error } = await supabase
         .from("profiles")
         .update({ is_approved: true })
@@ -303,69 +293,43 @@ export async function approveUser(targetUserId: string, targetEmail: string) {
 
     if (error) return { error: error.message };
 
-    // Envoi de l'email
     try {
         await resend.emails.send({
-            from: 'MMI Dijon <onboarding@resend.dev>', // Pense à vérifier ton domaine Resend
+            from: 'MMI Dijon <onboarding@resend.dev>',
             to: targetEmail,
             subject: '✅ Votre compte a été validé !',
-            html: `
-                <div style="font-family: sans-serif; padding: 20px;">
-                    <h1>Bienvenue sur MMI Réservation !</h1>
-                    <p>Bonne nouvelle, votre compte a été validé par un administrateur.</p>
-                    <p>Vous pouvez dès maintenant vous connecter et réserver du matériel.</p>
-                    <a href="${process.env.NEXT_PUBLIC_APP_URL}/auth/login" style="display:inline-block; background:#4F46E5; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">Se connecter</a>
-                </div>
-            `
+            html: `<h1>Bienvenue !</h1><p>Votre compte a été validé.</p>`
         });
     } catch (e) {
-        console.error("Erreur d'envoi d'email:", e);
+        console.error("Erreur email:", e);
     }
 
     revalidatePath("/admin/users");
     return { success: true };
 }
 
-/**
- * Rejeter un utilisateur (Suppression du profil).
- * Envoie un email de refus.
- */
 export async function rejectUser(targetUserId: string, targetEmail: string) {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
-    // 1. Vérification Admin
     if (user?.user_metadata?.role !== 'admin') return { error: "Non autorisé" };
 
-    // 2. PROTECTION ANTI-SUICIDE : On empêche l'admin de se supprimer lui-même
     if (user.id === targetUserId) {
         return { error: "Vous ne pouvez pas supprimer votre propre compte administrateur." };
     }
 
-    // Envoi de l'email
     try {
         await resend.emails.send({
             from: 'MMI Dijon <onboarding@resend.dev>',
             to: targetEmail,
             subject: '❌ Inscription refusée',
-            html: `
-                <div style="font-family: sans-serif; padding: 20px;">
-                    <h1>Inscription refusée</h1>
-                    <p>Bonjour,</p>
-                    <p>Votre demande d'accès au magasin MMI n'a pas été retenue.</p>
-                    <p>Si vous pensez qu'il s'agit d'une erreur, veuillez contacter un responsable.</p>
-                </div>
-            `
+            html: `<h1>Inscription refusée</h1><p>Contactez un responsable.</p>`
         });
     } catch (e) {
-        console.error("Erreur d'envoi d'email:", e);
+        console.error("Erreur email:", e);
     }
 
-    // Suppression du profil
-    const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", targetUserId);
+    const { error } = await supabase.from("profiles").delete().eq("id", targetUserId);
 
     if (error) return { error: error.message };
 
@@ -377,9 +341,6 @@ export async function rejectUser(targetUserId: string, targetEmail: string) {
    5. AUTHENTIFICATION
    ========================================================================== */
 
-/**
- * Déconnexion (Sign Out).
- */
 export async function signOut() {
     const supabase = await createClient();
     await supabase.auth.signOut();

@@ -5,6 +5,7 @@ import { X, Calendar as CalendarIcon, Image as ImageIcon } from "lucide-react";
 import ProductCalendar from "@/components/ProductCalendar";
 import AddToCartButton from "@/components/AddToCartButton";
 import { getInstrumentReservations } from "@/app/actions";
+import { createClient } from "@/lib/supabase/client";
 
 // Types
 type InstrumentLite = {
@@ -30,6 +31,9 @@ type Props = {
 export default function ProductModal({ instrument, isOpen, onClose, initialDateStart, initialDateEnd }: Props) {
     const [reservations, setReservations] = useState<any[]>([]);
 
+    // NOUVEAU : On stocke la quantité TOTALE réelle (ex: 6) pour éviter le bug de double soustraction
+    const [realTotalQty, setRealTotalQty] = useState<number | null>(null);
+
     // États locaux pour les dates dans le modal
     const [startDate, setStartDate] = useState(initialDateStart);
     const [endDate, setEndDate] = useState(initialDateEnd);
@@ -44,8 +48,20 @@ export default function ProductModal({ instrument, isOpen, onClose, initialDateS
     // Chargement des données à l'ouverture
     useEffect(() => {
         if (instrument && isOpen) {
-            // Récupère les résas existantes pour le calendrier
+            // 1. Récupère les résas pour le calendrier
             getInstrumentReservations(instrument.id).then(data => setReservations(data || []));
+
+            // 2. CORRECTION DU BUG : On récupère la quantité TOTALE physique depuis la base
+            // Car instrument.quantite contient peut-être déjà le "reste" calculé par la page précédente.
+            const supabase = createClient();
+            supabase
+                .from('instruments')
+                .select('quantite')
+                .eq('id', instrument.id)
+                .single()
+                .then(({ data }) => {
+                    if (data) setRealTotalQty(data.quantite);
+                });
 
             // Initialise les dates
             setStartDate(initialDateStart);
@@ -77,15 +93,20 @@ export default function ProductModal({ instrument, isOpen, onClose, initialDateS
 
     if (!isOpen || !instrument) return null;
 
-    // Calcul de la disponibilité (Simulé côté client pour l'instant T)
-    let availableQty = instrument.quantite || 1;
+    // Calcul de la disponibilité
+    // CORRECTION : On utilise realTotalQty (6) s'il est chargé, sinon on utilise instrument.quantite en secours
+    const baseQuantity = realTotalQty ?? instrument.quantite ?? 1;
+
+    let availableQty = baseQuantity;
+
     if (startDate && endDate && !errorMsg) {
         // On compte combien sont déjà pris sur cette période
         const reservedCount = reservations
             .filter(r => r.date_debut <= endDate && r.date_fin >= startDate)
             .reduce((sum, r) => sum + (r.quantity || 1), 0);
 
-        availableQty = Math.max(0, (instrument.quantite || 1) - reservedCount);
+        // Maintenant le calcul est juste : 6 - 3 = 3
+        availableQty = Math.max(0, baseQuantity - reservedCount);
     }
 
     return (
@@ -180,7 +201,7 @@ export default function ProductModal({ instrument, isOpen, onClose, initialDateS
                         ) : (
                             <AddToCartButton
                                 instrument={instrument}
-                                availableQty={availableQty}
+                                availableQty={availableQty} // Ici, on passe la vraie quantité calculée
                                 dates={startDate && endDate ? { start: startDate, end: endDate } : null}
                                 onSuccess={onClose}
                             />
