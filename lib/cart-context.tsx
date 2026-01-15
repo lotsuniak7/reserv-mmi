@@ -13,11 +13,11 @@ export type CartItem = {
     endDate: string;
 };
 
+// Type du contexte incluant la nouvelle signature de removeFromCart
 type CartContextType = {
     cart: CartItem[];
     addToCart: (item: CartItem) => void;
-    // On modifie remove pour qu'il prenne aussi les dates, sinon on risque de supprimer le mauvais item
-    removeFromCart: (id: number) => void;
+    removeFromCart: (id: number, startDate?: string, endDate?: string) => void;
     clearCart: () => void;
 };
 
@@ -54,7 +54,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     // Ajouter un item
     const addToCart = (item: CartItem) => {
         setCart((prev) => {
-            // On vérifie si l'item existe déjà (Même ID ET Mêmes Dates)
+            // On vérifie si l'item existe déjà (Même ID ET Mêmes Dates EXACTES)
+            // Cela évite de créer des doublons si on clique deux fois sur "Ajouter"
             const existingIndex = prev.findIndex(
                 (i) => i.id === item.id && i.startDate === item.startDate && i.endDate === item.endDate
             );
@@ -70,11 +71,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
     };
 
-    // Supprimer un item (Par ID simple pour l'instant, selon ton code précédent)
-    // Note : Idéalement, il faudrait aussi passer les dates pour être précis,
-    // mais pour l'instant on garde ta logique simple qui supprime par ID.
-    const removeFromCart = (id: number) => {
-        setCart((prev) => prev.filter((i) => i.id !== id));
+    // Supprimer un item
+    // MISE À JOUR : Prend désormais en compte les dates pour supprimer la ligne précise
+    const removeFromCart = (id: number, startDate?: string, endDate?: string) => {
+        setCart((prev) => prev.filter((i) => {
+            // Si des dates sont fournies, on supprime uniquement l'élément qui correspond exactement
+            if (startDate && endDate) {
+                const isSameItem = i.id === id && i.startDate === startDate && i.endDate === endDate;
+                return !isSameItem; // On garde tout sauf celui-là
+            }
+            // Fallback (sécurité) : si pas de dates, on supprime tout ce qui a cet ID
+            return i.id !== id;
+        }));
     };
 
     const clearCart = () => {

@@ -95,52 +95,59 @@ export default function CartPage() {
 
                 {/* COLONNE GAUCHE : Liste des articles */}
                 <div className="lg:col-span-2 space-y-4">
-                    {cart.map((item) => (
-                        <div key={`${item.id}-${item.startDate}`} className="bg-white border border-slate-200 rounded-xl p-4 flex gap-4 items-center shadow-sm hover:border-indigo-200 transition group">
+                    {cart.map((item, index) => {
+                        // CORRECTION CLÉ UNIQUE : On combine ID + Dates + Index pour éviter l'erreur React
+                        // "Encountered two children with the same key"
+                        const uniqueKey = `${item.id}-${item.startDate}-${item.endDate}-${index}`;
 
-                            {/* Image Miniature */}
-                            <div className="w-20 h-20 bg-slate-50 rounded-lg border border-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
-                                {item.image_url ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <Package className="text-slate-300" size={24} />
-                                )}
-                            </div>
+                        return (
+                            <div key={uniqueKey} className="bg-white border border-slate-200 rounded-xl p-4 flex gap-4 items-center shadow-sm hover:border-indigo-200 transition group">
 
-                            {/* Infos Article */}
-                            <div className="flex-1 min-w-0">
-                                <h3 className="font-bold text-slate-800 text-lg truncate">{item.name}</h3>
+                                {/* Image Miniature */}
+                                <div className="w-20 h-20 bg-slate-50 rounded-lg border border-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                                    {item.image_url ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <Package className="text-slate-300" size={24} />
+                                    )}
+                                </div>
 
-                                <div className="text-sm text-slate-500 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-1">
-                                    <div className="flex items-center gap-1.5">
-                                        <Calendar size={14} className="text-indigo-500" />
-                                        <span>
-                                            Du <span className="font-medium text-slate-700">{new Date(item.startDate).toLocaleDateString("fr-FR")}</span>
-                                        </span>
-                                    </div>
-                                    <div className="hidden sm:block text-slate-300">•</div>
-                                    <div>
-                                        Au <span className="font-medium text-slate-700">{new Date(item.endDate).toLocaleDateString("fr-FR")}</span>
+                                {/* Infos Article */}
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-bold text-slate-800 text-lg truncate">{item.name}</h3>
+
+                                    <div className="text-sm text-slate-500 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-1">
+                                        <div className="flex items-center gap-1.5">
+                                            <Calendar size={14} className="text-indigo-500" />
+                                            <span>
+                                                Du <span className="font-medium text-slate-700">{new Date(item.startDate).toLocaleDateString("fr-FR")}</span>
+                                            </span>
+                                        </div>
+                                        <div className="hidden sm:block text-slate-300">•</div>
+                                        <div>
+                                            Au <span className="font-medium text-slate-700">{new Date(item.endDate).toLocaleDateString("fr-FR")}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Quantité & Suppression */}
-                            <div className="flex flex-col items-end gap-3 pl-2">
-                                <div className="font-mono text-sm font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md border border-slate-200">
-                                    x{item.quantity}
+                                {/* Quantité & Suppression */}
+                                <div className="flex flex-col items-end gap-3 pl-2">
+                                    <div className="font-mono text-sm font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md border border-slate-200">
+                                        x{item.quantity}
+                                    </div>
+                                    <button
+                                        // CORRECTION SUPPRESSION : On passe aussi les dates pour supprimer la bonne ligne
+                                        onClick={() => removeFromCart(item.id, item.startDate, item.endDate)}
+                                        className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition"
+                                        title="Retirer du panier"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={() => removeFromCart(item.id)}
-                                    className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition"
-                                    title="Retirer du panier"
-                                >
-                                    <Trash2 size={18} />
-                                </button>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 {/* COLONNE DROITE : Validation */}
