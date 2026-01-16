@@ -188,23 +188,33 @@ export async function updateReservationStatus(
 /**
  * Créer un nouveau matériel.
  */
+// ... (Твои импорты)
+
+/**
+ * Créer un nouveau matériel avec quantité.
+ */
 export async function createInstrument(formData: FormData) {
     const supabase = await createClient();
 
+    // Vérification Admin
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.user_metadata?.role !== 'admin') return { error: "Interdit" };
 
     const name = formData.get("name") as string;
     const categorie = formData.get("categorie") as string;
     const description = formData.get("description") as string;
+    const quantite = parseInt(formData.get("quantite") as string) || 1; // Récupère la quantité
     const imageFile = formData.get("image") as File;
 
     if (!name) return { error: "Le nom du matériel est obligatoire." };
 
     let finalImageUrl = "";
 
+    // Upload de l'image (Correction du bug d'image)
     if (imageFile && imageFile.size > 0) {
-        const fileName = `${Date.now()}-${imageFile.name.replace(/\s/g, '_')}`;
+        // Nom unique pour éviter les conflits
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         const { error: uploadError } = await supabase
             .storage
@@ -214,10 +224,9 @@ export async function createInstrument(formData: FormData) {
                 upsert: false
             });
 
-        if (uploadError) {
-            return { error: "Erreur upload image : " + uploadError.message };
-        }
+        if (uploadError) return { error: "Erreur upload image : " + uploadError.message };
 
+        // Génération correcte de l'URL publique
         const { data: publicUrlData } = supabase
             .storage
             .from('instruments')
@@ -226,24 +235,77 @@ export async function createInstrument(formData: FormData) {
         finalImageUrl = publicUrlData.publicUrl;
     }
 
+    // Insertion
     const { error } = await supabase.from("instruments").insert({
         name,
         categorie,
-        image_url: finalImageUrl,
+        image_url: finalImageUrl, // Peut être vide si pas d'image
         description,
         status: "dispo",
-        quantite: 1
+        quantite: quantite // On sauvegarde la quantité choisie
     });
 
     if (error) return { error: error.message };
 
     revalidatePath("/admin/inventaire");
     revalidatePath("/");
+    revalidatePath("/catalogue");
     return { success: true };
 }
 
 /**
- * Supprimer un matériel.
+ * Mettre à jour un instrument existant (Modification).
+ */
+export async function updateInstrument(formData: FormData) {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.user_metadata?.role !== 'admin') return { error: "Interdit" };
+
+    const id = formData.get("id") as string;
+    const name = formData.get("name") as string;
+    const categorie = formData.get("categorie") as string;
+    const description = formData.get("description") as string;
+    const quantite = parseInt(formData.get("quantite") as string);
+    const imageFile = formData.get("image") as File;
+
+    const updateData: any = {
+        name,
+        categorie,
+        description,
+        quantite
+    };
+
+    // Si une nouvelle image est uploadée, on la remplace
+    if (imageFile && imageFile.size > 0) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase
+            .storage
+            .from('instruments')
+            .upload(fileName, imageFile);
+
+        if (!uploadError) {
+            const { data } = supabase.storage.from('instruments').getPublicUrl(fileName);
+            updateData.image_url = data.publicUrl;
+        }
+    }
+
+    const { error } = await supabase
+        .from("instruments")
+        .update(updateData)
+        .eq("id", id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/admin/inventaire");
+    revalidatePath("/catalogue");
+    return { success: true };
+}
+
+/**
+ * Supprimer un matériel et son image associée.
  */
 export async function deleteInstrument(id: number) {
     const supabase = await createClient();
@@ -251,6 +313,33 @@ export async function deleteInstrument(id: number) {
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.user_metadata?.role !== 'admin') return { error: "Interdit" };
 
+    // 1. D'abord, on récupère l'URL de l'image pour pouvoir la supprimer
+    const { data: instrument } = await supabase
+        .from("instruments")
+        .select("image_url")
+        .eq("id", id)
+        .single();
+
+    // 2. Si une image existe, on la supprime du Stockage Supabase
+    if (instrument?.image_url) {
+        // L'URL ressemble à : .../storage/v1/object/public/instruments/nom-du-fichier.jpg
+        // On doit extraire juste le nom du fichier à la fin.
+        const fileName = instrument.image_url.split('/').pop();
+
+        if (fileName) {
+            const { error: storageError } = await supabase
+                .storage
+                .from('instruments')
+                .remove([fileName]);
+
+            if (storageError) {
+                console.error("Erreur suppression image:", storageError);
+                // On continue quand même pour supprimer la ligne en base
+            }
+        }
+    }
+
+    // 3. Suppression de la ligne en base de données
     const { error } = await supabase.from("instruments").delete().eq("id", id);
 
     if (error) return { error: error.message };
