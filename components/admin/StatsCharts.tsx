@@ -20,15 +20,11 @@ import {
     TrendingUp,
     TrendingDown,
     Minus,
-    Trophy,
-    AlertTriangle,
-    CalendarDays,
     Users,
-    Layers,
     AlertCircle,
 } from "lucide-react";
 
-// Couleurs
+// Palette de couleurs pour les graphiques
 const COLORS = [
     "#6366f1",
     "#10b981",
@@ -41,29 +37,33 @@ const COLORS = [
 
 type StatsProps = {
     monthlyData: { name: string; reservations: number }[];
-    topInstruments: { name: string; count: number }[];
     categoryData: { name: string; value: number }[];
     statusDistribution: { name: string; value: number }[];
     flopInstruments?: { name: string; count: number }[];
-    // Добавляем пропсы, которые нужны для верхних KPI (они приходят из page.tsx)
+
+    // Données agrégées venant du serveur
     totalReservations: number;
     activeUsers: number;
-    totalInstruments: number;
+    totalInstruments: number; // On le garde dans les props mais on ne l'affiche plus
     refusalRate: string;
 };
 
-// Улучшенный Tooltip с процентами
-const CustomTooltip = ({ active, payload, label, total }: any) => {
+/**
+ * Tooltip pour le PieChart (Catégories).
+ * Affiche la valeur et le pourcentage au survol.
+ */
+const CategoryTooltip = ({ active, payload, total }: any) => {
     if (active && payload && payload.length) {
         const value = payload[0].value;
         const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+
         return (
-            <div className="bg-white p-4 border border-slate-100 shadow-xl rounded-xl z-50">
-                <p className="text-sm font-bold text-slate-800 mb-1">{label}</p>
+            <div className="bg-white p-3 border border-slate-100 shadow-xl rounded-xl z-50">
+                <p className="text-sm font-bold text-slate-800 mb-1">{payload[0].name}</p>
                 <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].fill }}></div>
                     <p className="text-sm font-medium text-slate-600">
-                        {value} réservations ({percent}%)
+                        {value} réservations <span className="text-slate-400">({percent}%)</span>
                     </p>
                 </div>
             </div>
@@ -72,214 +72,150 @@ const CustomTooltip = ({ active, payload, label, total }: any) => {
     return null;
 };
 
+/**
+ * Tooltip standard pour les courbes et barres.
+ */
+const StandardTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white p-3 border border-slate-100 shadow-xl rounded-xl z-50">
+                <p className="text-sm font-bold text-slate-800 mb-1">{label}</p>
+                <p className="text-sm font-medium text-indigo-600">
+                    {payload[0].value} réservations
+                </p>
+            </div>
+        );
+    }
+    return null;
+};
+
 export default function StatsCharts({
                                         monthlyData,
-                                        topInstruments,
                                         categoryData,
                                         statusDistribution,
                                         flopInstruments = [],
                                         totalReservations,
                                         activeUsers,
-                                        totalInstruments,
                                         refusalRate,
                                     }: StatsProps) {
+
     const hasData = monthlyData.some((d) => d.reservations > 0);
 
     if (!hasData) {
         return (
-            <div className="p-16 text-center bg-slate-50 border border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center">
+            <div className="p-12 text-center bg-slate-50 border border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center">
                 <div className="bg-white p-4 rounded-full shadow-sm mb-4">
                     <PackageOpen className="h-8 w-8 text-slate-400" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">Pas encore de données</h3>
                 <p className="text-slate-500 max-w-md mx-auto mt-2">
-                    Les graphiques apparaîtront ici dès que les premières réservations seront effectuées.
+                    Les statistiques apparaîtront ici dès les premières réservations.
                 </p>
             </div>
         );
     }
 
-    // CALCULS
+    // --- LOGIQUE DE CALCUL ---
+
+    // 1. Calcul de la Tendance (Dynamique)
+    // Compare la moyenne des 3 derniers mois vs les 3 mois d'avant.
     const recentMonths = monthlyData.slice(-3);
     const olderMonths = monthlyData.slice(-6, -3);
-    const recentAvg =
-        recentMonths.reduce((sum, m) => sum + m.reservations, 0) /
-        (recentMonths.length || 1);
-    const olderAvg =
-        olderMonths.reduce((sum, m) => sum + m.reservations, 0) /
-        (olderMonths.length || 1);
-    const trend =
-        olderAvg === 0
-            ? recentAvg > 0
-                ? 100
-                : 0
-            : ((recentAvg - olderAvg) / olderAvg) * 100;
 
+    const recentAvg = recentMonths.reduce((sum, m) => sum + m.reservations, 0) / (recentMonths.length || 1);
+    const olderAvg = olderMonths.reduce((sum, m) => sum + m.reservations, 0) / (olderMonths.length || 1);
+
+    // Formule : (Nouveau - Ancien) / Ancien * 100
+    const trend = olderAvg === 0
+        ? (recentAvg > 0 ? 100 : 0)
+        : ((recentAvg - olderAvg) / olderAvg) * 100;
+
+    // 2. Calcul du taux d'approbation (Validées / Total)
     const totalRequests = statusDistribution.reduce((sum, s) => sum + s.value, 0);
-    const approvalRate =
-        totalRequests > 0
-            ? (
-                (statusDistribution.find((s) => s.name === "Validées")?.value || 0) /
-                totalRequests *
-                100
-            ).toFixed(1)
-            : "0";
+    const approvalRate = totalRequests > 0
+        ? ((statusDistribution.find((s) => s.name === "Validées")?.value || 0) / totalRequests * 100).toFixed(1)
+        : "0";
 
-    const totalTopCount = topInstruments.reduce((sum, i) => sum + i.count, 0);
+    // 3. Total pour le calcul des pourcentages du Pie Chart
+    const totalCategoryVolume = categoryData.reduce((sum, cat) => sum + cat.value, 0);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* BLOC 1: KPIs — компактная и органичная версия */}
-            <div className="space-y-6">
-                {/* Верхний ряд — 4 основных KPI */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {/* Réservations */}
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-                        <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                            <TrendingUp size={20} />
-                        </div>
-                        <div>
-                            <div className="text-xl font-bold text-slate-900">
-                                {totalReservations}
-                            </div>
-                            <div className="text-xs text-slate-500 font-medium">
-                                Réservations
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* Étudiants actifs */}
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-                        <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg">
-                            <Users size={20} />
-                        </div>
-                        <div>
-                            <div className="text-xl font-bold text-slate-900">
-                                {activeUsers}
-                            </div>
-                            <div className="text-xs text-slate-500 font-medium">
-                                Étudiants actifs
-                            </div>
-                        </div>
-                    </div>
+            {/* --- SECTION 1 : KPIs (Carrés Compacts) --- */}
+            {/* On a remplacé "Stock" par "Tendance" comme demandé */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-                    {/* Articles en stock */}
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-                        <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
-                            <Layers size={20} />
-                        </div>
-                        <div>
-                            <div className="text-xl font-bold text-slate-900">
-                                {totalInstruments || 0}
-                            </div>
-                            <div className="text-xs text-slate-500 font-medium">
-                                Articles en stock
-                            </div>
-                        </div>
+                {/* KPI 1 : Réservations TOTALES (Année en cours) */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center aspect-square">
+                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl mb-3">
+                        {/* Icône fixe, pas d'animation */}
+                        <TrendingUp size={24} />
                     </div>
-
-                    {/* Taux de refus */}
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-                        <div className="p-2.5 bg-amber-50 text-amber-600 rounded-lg">
-                            <AlertCircle size={20} />
+                    <div>
+                        <div className="text-3xl font-bold text-slate-900 leading-none mb-1">
+                            {totalReservations}
                         </div>
-                        <div>
-                            <div className="text-xl font-bold text-slate-900">
-                                {refusalRate}%
-                            </div>
-                            <div className="text-xs text-slate-500 font-medium">
-                                Taux de refus
-                            </div>
+                        <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
+                            Réservations (Année)
                         </div>
                     </div>
                 </div>
 
-                {/* Нижний ряд — 3 инсайта, компактные */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Dynamique */}
-                    <div
-                        className={`p-4 rounded-xl border flex items-center gap-3 transition-all hover:shadow-md ${
-                            trend > 0
-                                ? "bg-emerald-50/70 border-emerald-200"
-                                : trend < 0
-                                    ? "bg-rose-50/70 border-rose-200"
-                                    : "bg-slate-50 border-slate-200"
-                        }`}
-                    >
-                        <div
-                            className={`p-2 rounded-lg shrink-0 ${
-                                trend > 0
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : trend < 0
-                                        ? "bg-rose-100 text-rose-700"
-                                        : "bg-slate-200 text-slate-700"
-                            }`}
-                        >
-                            {trend > 0 ? (
-                                <TrendingUp size={20} />
-                            ) : trend < 0 ? (
-                                <TrendingDown size={20} />
-                            ) : (
-                                <Minus size={20} />
-                            )}
+                {/* KPI 2 : Étudiants Actifs */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center aspect-square">
+                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl mb-3">
+                        <Users size={24} />
+                    </div>
+                    <div>
+                        <div className="text-3xl font-bold text-slate-900 leading-none mb-1">
+                            {activeUsers}
                         </div>
-                        <div className="min-w-0">
-                            <div className="text-base font-bold text-slate-800">Dynamique</div>
-                            <div className="text-xl font-extrabold text-slate-900">
-                                {Math.abs(trend).toFixed(0)}%
-                                <span className="text-sm font-medium text-slate-500 ml-2">
-                  {trend > 0 ? "croissance" : "baisse"} (3 mois)
-                </span>
-                            </div>
+                        <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
+                            Étudiants Actifs
                         </div>
                     </div>
+                </div>
 
-                    {/* Catégorie Reine */}
-                    <div className="p-4 rounded-xl border bg-indigo-50/70 border-indigo-200 flex items-center gap-3 hover:shadow-md transition-all">
-                        <div className="p-2 rounded-lg bg-indigo-100 text-indigo-700 shrink-0">
-                            <Trophy size={20} />
+                {/* KPI 3 : DYNAMIQUE (Remplacement du Stock) */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center aspect-square">
+                    <div className={`p-3 rounded-xl mb-3 ${trend > 0 ? "bg-emerald-50 text-emerald-600" : trend < 0 ? "bg-rose-50 text-rose-600" : "bg-slate-50 text-slate-600"}`}>
+                        {trend > 0 ? <TrendingUp size={24} /> : trend < 0 ? <TrendingDown size={24} /> : <Minus size={24} />}
+                    </div>
+                    <div>
+                        <div className={`text-3xl font-bold leading-none mb-1 ${trend > 0 ? "text-emerald-700" : trend < 0 ? "text-rose-700" : "text-slate-700"}`}>
+                            {Math.abs(trend).toFixed(0)}%
                         </div>
-                        <div className="min-w-0">
-                            <div className="text-base font-bold text-indigo-900">
-                                Catégorie reine
-                            </div>
-                            <div className="text-base font-semibold text-slate-800 truncate">
-                                {categoryData.reduce((a, b) =>
-                                    a.value > b.value ? a : b
-                                ).name || "—"}
-                            </div>
-                            <div className="text-xs text-slate-500">la plus demandée</div>
+                        <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
+                            Croissance (3 mois)
                         </div>
                     </div>
+                </div>
 
-                    {/* Ce mois-ci */}
-                    <div className="p-4 rounded-xl border bg-white border-slate-200 flex items-center gap-3 hover:shadow-md transition-all">
-                        <div className="p-2 rounded-lg bg-slate-100 text-slate-700 shrink-0">
-                            <CalendarDays size={20} />
+                {/* KPI 4 : Taux de refus */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center aspect-square">
+                    <div className="p-3 bg-amber-50 text-amber-600 rounded-xl mb-3">
+                        <AlertCircle size={24} />
+                    </div>
+                    <div>
+                        <div className="text-3xl font-bold text-slate-900 leading-none mb-1">
+                            {refusalRate}%
                         </div>
-                        <div>
-                            <div className="text-base font-bold text-slate-700">
-                                Ce mois-ci
-                            </div>
-                            <div className="text-xl font-extrabold text-slate-900">
-                                {monthlyData[monthlyData.length - 1]?.reservations || 0}
-                                <span className="text-sm font-medium text-slate-500 ml-2">
-                  réservations
-                </span>
-                            </div>
+                        <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
+                            Taux de refus (Annuel)
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* BLOC 2: ÉVOLUTION */}
+            {/* --- SECTION 2 : GRAPHIQUE D'ÉVOLUTION (Area Chart) --- */}
             <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
                 <div className="mb-8">
                     <h3 className="text-xl font-bold text-slate-900">
                         Évolution de la demande
                     </h3>
                     <p className="text-slate-500">
-                        Volume des réservations sur les 12 derniers mois
+                        Volume des réservations sur les 12 derniers mois.
                     </p>
                 </div>
                 <div className="h-[350px] w-full">
@@ -294,11 +230,7 @@ export default function StatsCharts({
                                     <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid
-                                strokeDasharray="3 3"
-                                vertical={false}
-                                stroke="#f1f5f9"
-                            />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis
                                 dataKey="name"
                                 axisLine={false}
@@ -312,9 +244,7 @@ export default function StatsCharts({
                                 tick={{ fontSize: 12, fill: "#64748b" }}
                             />
                             <Tooltip
-                                content={(props) => (
-                                    <CustomTooltip {...props} total={totalTopCount} />
-                                )}
+                                content={<StandardTooltip />}
                                 cursor={{
                                     stroke: "#6366f1",
                                     strokeWidth: 2,
@@ -329,81 +259,28 @@ export default function StatsCharts({
                                 fillOpacity={1}
                                 fill="url(#colorResa)"
                                 activeDot={{ r: 6, strokeWidth: 0, fill: "#4f46e5" }}
-                                animationDuration={800}
+                                animationDuration={1000}
                             />
                         </AreaChart>
                     </ResponsiveContainer>
                 </div>
             </div>
 
-            {/* BLOC 3: TOP MATÉRIEL */}
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-                <div className="flex justify-between items-end mb-8">
-                    <div>
-                        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                            <Trophy className="text-amber-500" size={24} />
-                            Top Matériel
+
+            {/* --- SECTION 3 : DISTRIBUTION (Pie + Status) --- */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                {/* 1. Pie Chart (Catégories) */}
+                <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                    <div className="mb-6">
+                        <h3 className="text-lg font-bold text-slate-900">
+                            Répartition par catégorie
                         </h3>
-                        <p className="text-slate-500 mt-1">
-                            Les équipements stars de votre inventaire.
+                        <p className="text-sm text-slate-500">
+                            Basé sur l'ensemble des réservations de cette année.
                         </p>
                     </div>
-                </div>
-                <div className="h-[400px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                            data={topInstruments}
-                            layout="vertical"
-                            margin={{ left: 20, right: 30 }}
-                            barSize={24}
-                        >
-                            <CartesianGrid
-                                strokeDasharray="3 3"
-                                horizontal={true}
-                                vertical={false}
-                                stroke="#f1f5f9"
-                            />
-                            <XAxis type="number" hide />
-                            <YAxis
-                                dataKey="name"
-                                type="category"
-                                width={200}
-                                tick={{ fill: "#334155", fontSize: 13, fontWeight: 600 }}
-                                axisLine={false}
-                                tickLine={false}
-                            />
-                            <Tooltip
-                                cursor={{ fill: "#f8fafc" }}
-                                contentStyle={{
-                                    borderRadius: "12px",
-                                    border: "none",
-                                    boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
-                                }}
-                            />
-                            <Bar
-                                dataKey="count"
-                                radius={[0, 6, 6, 0]}
-                                animationDuration={800}
-                            >
-                                {topInstruments.map((entry, index) => (
-                                    <Cell
-                                        key={`cell-${index}`}
-                                        fill={index < 3 ? "#4f46e5" : "#94a3b8"}
-                                    />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
 
-            {/* BLOC 4: DISTRIBUTION */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* PieChart */}
-                <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-                    <h3 className="text-lg font-bold text-slate-900 mb-6">
-                        Répartition par catégorie
-                    </h3>
                     <div className="flex-1 min-h-[300px] relative">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -411,12 +288,12 @@ export default function StatsCharts({
                                     data={categoryData}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={80}
-                                    outerRadius={120}
-                                    paddingAngle={4}
+                                    innerRadius={70}
+                                    outerRadius={110}
+                                    paddingAngle={3}
                                     dataKey="value"
                                     cornerRadius={6}
-                                    animationDuration={800}
+                                    label={false}
                                 >
                                     {categoryData.map((entry, index) => (
                                         <Cell
@@ -426,33 +303,38 @@ export default function StatsCharts({
                                         />
                                     ))}
                                 </Pie>
-                                <Tooltip />
+                                <Tooltip
+                                    content={(props) => <CategoryTooltip {...props} total={totalCategoryVolume} />}
+                                    wrapperStyle={{ zIndex: 1000, outline: "none" }}
+                                />
                                 <Legend
                                     verticalAlign="bottom"
                                     height={36}
                                     iconType="circle"
                                     formatter={(value) => (
                                         <span className="text-slate-600 font-medium ml-1">
-                      {value}
-                    </span>
+                                            {value}
+                                        </span>
                                     )}
                                 />
                             </PieChart>
                         </ResponsiveContainer>
+
+                        {/* Indicateur central */}
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                             <div className="text-center">
-                <span className="block text-3xl font-bold text-slate-800">
-                  {categoryData.length}
-                </span>
+                                <span className="block text-3xl font-bold text-slate-800">
+                                    {categoryData.length}
+                                </span>
                                 <span className="text-xs text-slate-400 uppercase font-bold tracking-wider">
-                  Catégories
-                </span>
+                                    Types
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* BarChart Statuts */}
+                {/* 2. Bar Chart (Statuts) */}
                 <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
                     <div className="flex justify-between items-start mb-6">
                         <div>
@@ -460,21 +342,18 @@ export default function StatsCharts({
                                 Statuts des demandes
                             </h3>
                             <p className="text-slate-500 text-sm">
-                                Taux de validation global
+                                Taux d'acceptation et de refus (Cette année)
                             </p>
                         </div>
                         <div className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-lg font-bold text-lg border border-emerald-100">
                             {approvalRate}%
                         </div>
                     </div>
+
                     <div className="flex-1 flex items-center justify-center">
                         <ResponsiveContainer width="100%" height={300}>
                             <BarChart data={statusDistribution} margin={{ top: 20 }}>
-                                <CartesianGrid
-                                    strokeDasharray="3 3"
-                                    vertical={false}
-                                    stroke="#f1f5f9"
-                                />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                 <XAxis
                                     dataKey="name"
                                     axisLine={false}
@@ -486,7 +365,6 @@ export default function StatsCharts({
                                     dataKey="value"
                                     radius={[8, 8, 8, 8]}
                                     barSize={50}
-                                    animationDuration={800}
                                 >
                                     {statusDistribution.map((entry, index) => {
                                         let color = "#94a3b8";
@@ -502,25 +380,25 @@ export default function StatsCharts({
                 </div>
             </div>
 
-            {/* BLOC 5: FLOPS */}
+            {/* --- SECTION 4 : LES "FLOPS" (Matériel non utilisé) --- */}
             {flopInstruments && flopInstruments.length > 0 && (
                 <div className="bg-slate-50 p-6 rounded-2xl border border-dashed border-slate-300">
                     <div className="flex items-center gap-3 mb-4">
-                        <AlertTriangle className="text-slate-400" size={20} />
+                        <AlertCircle className="text-slate-400" size={20} />
                         <h3 className="text-sm font-bold text-slate-600 uppercase tracking-wider">
-                            Matériel peu sollicité (Flops)
+                            Matériel peu sollicité (Top 5 Flops)
                         </h3>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    <div className="flex flex-wrap gap-3">
                         {flopInstruments.map((item, idx) => (
                             <div
                                 key={idx}
-                                className="bg-white p-3 rounded-lg border border-slate-200 text-sm text-slate-500 shadow-sm flex justify-between items-center"
+                                className="bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-sm text-slate-500 shadow-sm"
                             >
-                                <span className="font-medium">{item.name}</span>
-                                <span className="ml-2 font-bold text-slate-300">
-                  ({item.count})
-                </span>
+                                {item.name}{" "}
+                                <span className="ml-1 font-bold text-slate-300">
+                                    ({item.count})
+                                </span>
                             </div>
                         ))}
                     </div>

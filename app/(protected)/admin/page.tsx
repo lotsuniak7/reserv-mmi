@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import AdminRequestCard from "../../../components/admin/AdminRequestCard"; // Assure-toi que le fichier est bien dans components/admin/
 import Link from "next/link";
-import { Package, Users, ClipboardList } from "lucide-react";
+import { Package, Users, ClipboardList, ChartNoAxesCombined } from "lucide-react";
+
 
 /**
  * Page Tableau de Bord Administrateur (/admin).
@@ -59,6 +60,13 @@ export default async function AdminPage() {
 
                 {/* Boutons de navigation Admin */}
                 <div className="flex gap-3">
+                    <Link
+                        href="/admin/stats"
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition font-medium text-sm shadow-sm"
+                    >
+                        <ChartNoAxesCombined size={18} />
+                        Analystics
+                    </Link>
                     <Link
                         href="/admin/users"
                         className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 hover:text-indigo-600 transition font-medium text-sm shadow-sm"
