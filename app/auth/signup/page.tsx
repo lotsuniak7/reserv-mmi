@@ -37,7 +37,7 @@ export default async function SignupPage(props: Props) {
             options: {
                 // Ces métadonnées seront copiées dans la table 'profiles' grâce à notre trigger SQL
                 data: {
-                    full_name: full_name,
+                    full_name: formData.get("fullName"),
                     role: "etudiant" // Rôle par défaut
                 }
             },

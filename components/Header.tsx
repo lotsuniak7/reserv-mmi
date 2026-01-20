@@ -67,9 +67,12 @@ export default function Header() {
                 <div className="flex items-center gap-4">
                     {/* Avatar visuel */}
                     <div className="hidden sm:flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold shadow-sm">
+                        <Link
+                            href="/profil"
+                            className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold shadow-sm"
+                        >
                             <User size={20} />
-                        </div>
+                        </Link>
                     </div>
 
                     {/* Bouton Logout */}
