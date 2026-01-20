@@ -7,13 +7,18 @@ import { ShoppingCart, Check, AlertCircle, PackageX } from "lucide-react";
 type Props = {
     instrument: { id: number; name: string; image_url: string | null };
     availableQty: number;
-    dates: { start: string; end: string } | null;
+    dates: {
+        start: string;
+        end: string;
+        startTime: string;
+        endTime: string;
+    } | null;
     onSuccess?: () => void;
 };
 
 /**
  * Bouton "Ajouter au panier".
- * Gère la sélection de la quantité, les messages d'erreur et l'animation de succès.
+ * Gère désormais les conflits de dates via le retour de la fonction addToCart.
  */
 export default function AddToCartButton({ instrument, availableQty, dates, onSuccess }: Props) {
     const { addToCart } = useCart();
@@ -40,28 +45,35 @@ export default function AddToCartButton({ instrument, availableQty, dates, onSuc
         );
     }
 
-    // Fonction d'ajout
+    // Fonction d'ajout avec gestion d'erreur
     const handleAdd = () => {
-        addToCart({
+        const result = addToCart({
             id: instrument.id,
             name: instrument.name,
             image_url: instrument.image_url,
             quantity: qty,
             maxQuantity: availableQty,
             startDate: dates.start,
-            endDate: dates.end
+            endDate: dates.end,
+            startTime: dates.startTime,
+            endTime: dates.endTime
         });
 
-        setAdded(true);
-
-        // Fermeture automatique du modal après 1 seconde
-        setTimeout(() => {
-            setAdded(false);
-            if (onSuccess) onSuccess();
-        }, 1000);
+        // VÉRIFICATION DU RÉSULTAT
+        if (result.success) {
+            // SUCCÈS : On lance l'animation
+            setAdded(true);
+            setTimeout(() => {
+                setAdded(false);
+                if (onSuccess) onSuccess();
+            }, 1000);
+        } else {
+            // ÉCHEC (Conflit de dates) : On avertit l'utilisateur
+            alert("⛔ IMPOSSIBLE D'AJOUTER AU PANIER\n\n" + (result.error || "Erreur inconnue"));
+        }
     };
 
-    // CAS 3 : Affichage normal (Sélecteur Qté + Bouton)
+    // CAS 3 : Affichage normal
     return (
         <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
@@ -82,15 +94,15 @@ export default function AddToCartButton({ instrument, availableQty, dates, onSuc
                 </div>
             </div>
 
-            {/* Bouton d'action principal */}
+            {/* Bouton d'action */}
             <button
                 onClick={handleAdd}
                 disabled={added}
                 className={`
                     w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 shadow-sm
                     ${added
-                    ? "bg-emerald-500 text-white scale-95" // État Succès (Vert)
-                    : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5" // État Normal (Indigo)
+                    ? "bg-emerald-500 text-white scale-95"
+                    : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5"
                 }
                 `}
             >

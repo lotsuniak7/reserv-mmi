@@ -1,234 +1,354 @@
 "use client";
 
-import { updateReservationStatus } from "@/app/actions"; // <--- Nom corrigé ici
+import { updateRequestStatus } from "@/app/actions"; // <--- On utilise la NOUVELLE action globale
 import { useState } from "react";
-import { Check, X, User, MessageSquare, Calendar, Package, AlertCircle, Loader2 } from "lucide-react";
+import { Check, X, User, MessageSquare, Package, FileText, Printer, Phone, GraduationCap, XCircle } from "lucide-react";
 
-// --- DÉFINITION DES TYPES ---
-// Ces types doivent correspondre à ce que tu récupères dans ta requête Supabase (page admin)
-
+// --- TYPES ---
 type ReservationItem = {
     id: number;
     quantity: number;
     date_debut: string;
     date_fin: string;
+    start_time: string | null;
+    end_time: string | null;
     statut: string;
-    message?: string; // Motif du refus
-    instruments: {
-        name: string;
-        image_url: string | null;
-    } | null;
+    message?: string;
+    instruments: { name: string; image_url: string | null; } | null;
 };
 
 type RequestWithDetails = {
     id: number;
     created_at: string;
+    statut: string; // "en attente", "validée", "refusée"
     message: string | null;
-    // Attention : Assure-toi que ta requête SQL récupère bien "profiles"
+    enseignant?: string;
+    project_type?: string;
     profiles: {
         full_name: string | null;
         email: string | null;
+        phone?: string;
+        filiere?: string;
+        parcours?: string;
     } | null;
     reservations: ReservationItem[];
 };
 
 /**
- * Carte de Demande (AdminRequestCard).
- * Affiche un dossier complet et permet de gérer chaque ligne (Valider / Refuser avec motif).
+ * Carte de gestion globale d'un dossier.
+ * Les actions (Valider/Refuser) s'appliquent désormais à TOUT le dossier.
  */
 export default function AdminRequestCard({ request }: { request: RequestWithDetails }) {
-    // --- ÉTATS ---
-    const [rejectionId, setRejectionId] = useState<number | null>(null); // ID de la ligne en cours de refus
-    const [reason, setReason] = useState(""); // Texte du motif
-    const [loading, setLoading] = useState(false); // État de chargement global pour la carte
+    const [currentStatus, setCurrentStatus] = useState(request.statut);
 
-    // Formatage propre de la date
+    // États pour le refus global
+    const [isRejecting, setIsRejecting] = useState(false); // Affiche la zone de texte refus
+    const [reason, setReason] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    // État pour le Bon de Sortie
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
     const createdDate = new Date(request.created_at).toLocaleDateString("fr-FR", {
         day: 'numeric', month: 'long', hour: '2-digit', minute:'2-digit'
     });
 
-    // --- ACTIONS ---
+    // --- ACTIONS GLOBALES ---
 
-    // 1. Valider une ligne
-    async function handleValidate(id: number) {
+    async function handleGlobalValidate() {
+        if (!confirm("Valider l'ensemble de ce dossier ?")) return;
         setLoading(true);
         try {
-            await updateReservationStatus(id, "validée");
+            await updateRequestStatus(request.id, "validée");
+            setCurrentStatus("validée");
         } catch (e) {
-            console.error(e);
-            alert("Erreur lors de la validation.");
+            alert("Erreur technique lors de la validation.");
         } finally {
             setLoading(false);
         }
     }
 
-    // 2. Refuser une ligne (avec le motif saisi)
-    async function handleRefuse() {
-        if (!rejectionId || !reason.trim()) return;
-
+    async function handleGlobalRefuse() {
+        if (!reason.trim()) {
+            alert("Veuillez indiquer un motif de refus pour l'étudiant.");
+            return;
+        }
         setLoading(true);
         try {
-            await updateReservationStatus(rejectionId, "refusée", reason);
-            // Réinitialisation du formulaire après succès
-            setRejectionId(null);
-            setReason("");
+            await updateRequestStatus(request.id, "refusée", reason);
+            setCurrentStatus("refusée");
+            setIsRejecting(false);
         } catch (e) {
-            console.error(e);
-            alert("Erreur lors du refus.");
+            alert("Erreur technique lors du refus.");
         } finally {
             setLoading(false);
         }
     }
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    // Détermine la couleur de la bordure selon le statut global
+    const statusColor =
+        request.statut === 'validée' ? 'border-emerald-500' :
+            request.statut === 'refusée' ? 'border-red-200 opacity-75' :
+                'border-slate-200';
 
     return (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6 transition hover:shadow-md">
+        <>
+            <style jsx global>{`
+                @media print {
+                    body * { visibility: hidden; }
+                    #printable-modal, #printable-modal * { visibility: visible; }
+                    #printable-modal { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; background: white; z-index: 9999; }
+                    .no-print { display: none !important; }
+                }
+            `}</style>
 
-            {/* 1. EN-TÊTE DU DOSSIER (Header gris) */}
-            <div className="bg-slate-50 p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className={`bg-white border rounded-xl shadow-sm overflow-hidden mb-8 transition hover:shadow-md ${statusColor}`}>
 
-                {/* Infos Utilisateur */}
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold shadow-sm shrink-0">
-                        <User size={20} />
-                    </div>
-                    <div>
-                        <div className="font-bold text-slate-800 flex items-center gap-2">
-                            Dossier #{request.id}
+                {/* --- HEADER --- */}
+                <div className="bg-slate-50 p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-sm shrink-0 ${
+                            currentStatus === 'validée' ? 'bg-emerald-100 text-emerald-600' :
+                                currentStatus === 'refusée' ? 'bg-red-100 text-red-600' :
+                                    'bg-indigo-100 text-indigo-600'
+                        }`}>
+                            {currentStatus === 'validée' ? <Check size={20}/> :
+                                currentStatus === 'refusée' ? <X size={20}/> :
+                                    <User size={20}/>}
                         </div>
-                        <div className="text-xs text-slate-500 font-mono mt-0.5">
-                            User : <span className="font-semibold text-slate-700">
-                                {request.profiles?.full_name || request.profiles?.email || "Inconnu"}
-                            </span>
+                        <div>
+                            <div className="font-bold text-slate-800 flex items-center gap-2">
+                                Dossier #{request.id}
+                                {request.enseignant && (
+                                    <span className="text-[10px] font-normal bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full border border-indigo-100 hidden sm:inline-block">
+                                        Prof: {request.enseignant}
+                                    </span>
+                                )}
+                                {/* Badge de Statut Global */}
+                                {currentStatus !== 'en attente' && (
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider ${
+                                        currentStatus === 'validée' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                                    }`}>
+                                        {currentStatus}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="text-xs text-slate-500 font-mono mt-0.5">
+                                User : <span className="font-semibold text-slate-700">
+                                    {request.profiles?.full_name || "Inconnu"}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-50 hover:text-indigo-600 transition shadow-sm"
+                        >
+                            <FileText size={14} />
+                            Bon de sortie
+                        </button>
+                        <div className="text-xs text-slate-500 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm hidden sm:block">
+                            {createdDate}
                         </div>
                     </div>
                 </div>
 
-                {/* Date de création */}
-                <div className="text-xs text-slate-500 flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
-                    <Calendar size={14} className="text-slate-400"/> {createdDate}
+                {/* Message étudiant */}
+                {request.message && (
+                    <div className="px-5 py-3 bg-amber-50 border-b border-amber-100 flex gap-3 items-start">
+                        <MessageSquare size={16} className="text-amber-500 mt-1 shrink-0" />
+                        <p className="text-sm text-amber-900 italic">"{request.message}"</p>
+                    </div>
+                )}
+
+                {/* --- LISTE DES ARTICLES (Lecture seule) --- */}
+                <div className="divide-y divide-slate-100">
+                    {request.reservations.map((resa) => (
+                        <div key={resa.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-slate-50/30">
+                            <div className="w-16 h-12 bg-white rounded-lg border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                {resa.instruments?.image_url ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={resa.instruments.image_url} className="w-full h-full object-cover" alt="" />
+                                ) : <Package className="text-slate-300" size={20} />}
+                            </div>
+
+                            <div className="flex-1 min-w-0 space-y-1">
+                                <div className="font-bold text-sm text-slate-800 truncate">
+                                    {resa.instruments?.name || "Matériel supprimé"}
+                                </div>
+                                <div className="text-xs text-slate-500 flex flex-wrap gap-2 items-center">
+                                    <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-bold text-slate-600">x{resa.quantity}</span>
+                                    <span className="flex items-center gap-1">
+                                        {new Date(resa.date_debut).toLocaleDateString("fr-FR")}
+                                        <span className="font-bold text-slate-700">({resa.start_time || "09:00"})</span>
+                                        <span className="text-slate-300">➜</span>
+                                        {new Date(resa.date_fin).toLocaleDateString("fr-FR")}
+                                        <span className="font-bold text-slate-700">({resa.end_time || "17:00"})</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
+
+                {/* --- FOOTER D'ACTIONS GLOBALES --- */}
+                {/* On n'affiche les boutons que si le dossier est "en attente" */}
+                {currentStatus === 'en attente' && (
+                    <div className="p-4 bg-slate-50 border-t border-slate-200">
+
+                        {!isRejecting ? (
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    onClick={() => setIsRejecting(true)}
+                                    disabled={loading}
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-red-200 text-red-600 text-sm font-bold rounded-xl hover:bg-red-50 hover:border-red-300 transition shadow-sm"
+                                >
+                                    <XCircle size={18} />
+                                    Refuser le dossier
+                                </button>
+                                <button
+                                    onClick={handleGlobalValidate}
+                                    disabled={loading}
+                                    className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition shadow-md shadow-slate-900/10"
+                                >
+                                    {loading ? <span className="animate-spin">⏳</span> : <Check size={18} />}
+                                    Valider le dossier
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="bg-red-50 p-4 rounded-xl border border-red-100 animate-in slide-in-from-bottom-2 fade-in">
+                                <label className="block text-xs font-bold text-red-700 uppercase mb-2">Motif du refus (Obligatoire)</label>
+                                <div className="flex gap-3">
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        placeholder="Ex: Période trop longue, matériel réservé pour examen..."
+                                        className="flex-1 px-3 py-2 border border-red-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none"
+                                        value={reason}
+                                        onChange={e => setReason(e.target.value)}
+                                        onKeyDown={e => e.key === 'Enter' && handleGlobalRefuse()}
+                                    />
+                                    <button
+                                        onClick={handleGlobalRefuse}
+                                        disabled={loading}
+                                        className="px-4 py-2 bg-red-600 text-white font-bold text-sm rounded-lg hover:bg-red-700 transition"
+                                    >
+                                        Confirmer le refus
+                                    </button>
+                                    <button
+                                        onClick={() => { setIsRejecting(false); setReason(""); }}
+                                        className="px-4 py-2 bg-white text-slate-600 font-bold text-sm rounded-lg hover:bg-slate-100 border border-slate-200 transition"
+                                    >
+                                        Annuler
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
-            {/* 2. MESSAGE DE L'ÉTUDIANT (Si présent) */}
-            {request.message && (
-                <div className="px-5 py-3 bg-amber-50 border-b border-amber-100 flex gap-3 items-start">
-                    <MessageSquare size={16} className="text-amber-500 mt-1 shrink-0" />
-                    <p className="text-sm text-amber-900 italic">
-                        <span className="font-bold mr-1">Note étudiant :</span>
-                        "{request.message}"
-                    </p>
+            {/* --- MODAL BON DE SORTIE (Identique mais réaffiché pour le contexte) --- */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in overflow-y-auto">
+                    <div id="printable-modal" className="bg-white w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden relative animate-in zoom-in-95">
+                        {/* Toolbar */}
+                        <div className="bg-slate-900 text-white p-4 flex justify-between items-center no-print">
+                            <h3 className="font-bold flex items-center gap-2">
+                                <FileText size={20} /> Bon de Sortie #{request.id}
+                            </h3>
+                            <div className="flex gap-2">
+                                <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-bold text-sm transition">
+                                    <Printer size={16} /> Imprimer / PDF
+                                </button>
+                                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white/10 rounded-lg transition">
+                                    <XCircle size={20} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Document Papier */}
+                        <div className="p-8 text-slate-900 space-y-6">
+                            <div className="flex justify-between border-b-2 border-slate-900 pb-4">
+                                <div>
+                                    <h1 className="text-2xl font-black uppercase tracking-widest">Bon de Sortie</h1>
+                                    <p className="text-sm font-bold text-slate-500">Département MMI - Dijon</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm text-slate-500">Créé le {new Date(request.created_at).toLocaleDateString("fr-FR")}</p>
+                                    <div className="mt-1 font-mono font-bold text-lg">#{request.id}</div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-8">
+                                <div className="space-y-2">
+                                    <h4 className="font-bold uppercase text-xs text-slate-500 border-b border-slate-200 pb-1 mb-2">Étudiant</h4>
+                                    <p className="font-bold text-lg">{request.profiles?.full_name}</p>
+                                    <div className="text-sm space-y-1">
+                                        <p className="flex items-center gap-2"><Phone size={14}/> {request.profiles?.phone || "Non renseigné"}</p>
+                                        <p className="flex items-center gap-2"><GraduationCap size={14}/> {request.profiles?.filiere || "—"} / {request.profiles?.parcours || "—"}</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <h4 className="font-bold uppercase text-xs text-slate-500 border-b border-slate-200 pb-1 mb-2">Projet</h4>
+                                    <div className="text-sm space-y-2">
+                                        <div><span className="font-bold text-slate-700">Type :</span> {request.project_type || "Non spécifié"}</div>
+                                        <div><span className="font-bold text-slate-700">Prof :</span> {request.enseignant || "—"}</div>
+                                        {request.message && (
+                                            <div className="mt-2 text-slate-500 italic text-xs border-l-2 border-slate-300 pl-2">{request.message}</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 className="font-bold uppercase text-xs text-slate-500 mb-3">Matériel</h4>
+                                <table className="w-full border-collapse text-sm">
+                                    <thead>
+                                    <tr className="bg-slate-100 text-slate-700 text-left">
+                                        <th className="p-3 border border-slate-300">Désignation</th>
+                                        <th className="p-3 border border-slate-300 w-16 text-center">Qté</th>
+                                        <th className="p-3 border border-slate-300 w-32">Départ</th>
+                                        <th className="p-3 border border-slate-300 w-32">Retour</th>
+                                        <th className="p-3 border border-slate-300 w-24 text-center">Check</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {request.reservations.map(r => (
+                                        <tr key={r.id}>
+                                            <td className="p-3 border border-slate-300 font-bold">{r.instruments?.name}</td>
+                                            <td className="p-3 border border-slate-300 text-center font-mono">{r.quantity}</td>
+                                            <td className="p-3 border border-slate-300">
+                                                {new Date(r.date_debut).toLocaleDateString("fr-FR")} <span className="text-xs block font-bold">{r.start_time}</span>
+                                            </td>
+                                            <td className="p-3 border border-slate-300">
+                                                {new Date(r.date_fin).toLocaleDateString("fr-FR")} <span className="text-xs block font-bold">{r.end_time}</span>
+                                            </td>
+                                            <td className="p-3 border border-slate-300"></td>
+                                        </tr>
+                                    ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-8 pt-8 mt-8 border-t-2 border-slate-900 break-inside-avoid">
+                                <div className="h-32 border border-slate-300 p-3 rounded bg-slate-50">
+                                    <p className="font-bold text-xs uppercase text-slate-500 mb-12">Signature Étudiant</p>
+                                </div>
+                                <div className="h-32 border border-slate-300 p-3 rounded bg-slate-50">
+                                    <p className="font-bold text-xs uppercase text-slate-500">Signature Secrétariat</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
-
-            {/* 3. LISTE DES ARTICLES (Lignes de réservation) */}
-            <div className="divide-y divide-slate-100">
-                {request.reservations.map((resa) => (
-                    <div key={resa.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-slate-50/50 transition-colors">
-
-                        {/* Image Produit */}
-                        <div className="w-16 h-12 bg-white rounded-lg border border-slate-200 overflow-hidden shrink-0 relative flex items-center justify-center">
-                            {resa.instruments?.image_url ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={resa.instruments.image_url} className="w-full h-full object-cover" alt="" />
-                            ) : (
-                                <Package className="text-slate-300" size={20} />
-                            )}
-                        </div>
-
-                        {/* Détails (Nom, Dates, Quantité) */}
-                        <div className="flex-1 min-w-0 space-y-1">
-                            <div className="font-bold text-sm text-slate-800 truncate">
-                                {resa.instruments?.name || "Matériel supprimé"}
-                            </div>
-
-                            <div className="text-xs text-slate-500 flex flex-wrap gap-2 items-center">
-                                <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-bold text-slate-600">
-                                    x{resa.quantity}
-                                </span>
-                                <span className="flex items-center gap-1 font-medium">
-                                    {new Date(resa.date_debut).toLocaleDateString("fr-FR")}
-                                    <span className="text-slate-300">➜</span>
-                                    {new Date(resa.date_fin).toLocaleDateString("fr-FR")}
-                                </span>
-                            </div>
-
-                            {/* Affichage du motif si la ligne a été refusée */}
-                            {resa.statut === 'refusée' && resa.message && (
-                                <div className="text-xs text-red-700 mt-1.5 bg-red-50 inline-flex items-center gap-1 px-2 py-1 rounded border border-red-100">
-                                    <AlertCircle size={12} />
-                                    <strong>Refus :</strong> {resa.message}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* ZONE D'ACTIONS (Boutons ou Badge) */}
-                        <div className="shrink-0 mt-2 sm:mt-0 min-w-[140px] flex justify-end">
-
-                            {resa.statut === 'en attente' ? (
-                                <div className="flex items-center gap-2">
-
-                                    {/* CAS A : Mode saisie du motif (Si on a cliqué sur Refuser) */}
-                                    {rejectionId === resa.id ? (
-                                        <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-200">
-                                            <input
-                                                autoFocus
-                                                type="text"
-                                                placeholder="Motif..."
-                                                className="text-xs border border-red-300 bg-red-50 text-red-900 rounded px-2 py-1 w-32 outline-none focus:ring-2 focus:ring-red-500"
-                                                value={reason}
-                                                onChange={e => setReason(e.target.value)}
-                                                onKeyDown={(e) => e.key === 'Enter' && handleRefuse()}
-                                            />
-                                            <button
-                                                onClick={handleRefuse}
-                                                disabled={loading}
-                                                className="px-2 py-1 bg-red-600 text-white text-xs font-bold rounded hover:bg-red-700 transition shadow-sm"
-                                            >
-                                                OK
-                                            </button>
-                                            <button
-                                                onClick={() => setRejectionId(null)}
-                                                className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
-                                            >
-                                                <X size={16}/>
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        // CAS B : Boutons Valider / Refuser
-                                        <>
-                                            <button
-                                                onClick={() => handleValidate(resa.id)}
-                                                disabled={loading || rejectionId !== null}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-100 border border-emerald-200 transition disabled:opacity-50"
-                                                title="Valider"
-                                            >
-                                                <Check size={14} /> Valider
-                                            </button>
-                                            <button
-                                                onClick={() => { setRejectionId(resa.id); setReason(""); }}
-                                                disabled={loading || rejectionId !== null}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 text-xs font-bold rounded-lg hover:bg-red-100 border border-red-200 transition disabled:opacity-50"
-                                                title="Refuser"
-                                            >
-                                                <X size={14} /> Refuser
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            ) : (
-                                // CAS C : Déjà traité -> Affichage du Badge
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border shadow-sm ${
-                                    resa.statut === 'validée'
-                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                        : 'bg-red-50 text-red-700 border-red-200'
-                                }`}>
-                                    {resa.statut}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
+        </>
     );
 }

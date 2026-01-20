@@ -58,7 +58,7 @@ export async function getMyProfile() {
 export async function submitCartReservation(
     items: CartItemPayload[],
     globalMessage: string,
-    details: BookingDetails // <--- NOUVEAU PARAMÈTRE
+    details: BookingDetails
 ) {
     const supabase = await createClient();
 
@@ -128,7 +128,7 @@ export async function submitCartReservation(
         .insert({
             user_id: user.id,
             message: globalMessage,
-            status: "en attente",
+            statut: "en attente",
             enseignant: details.enseignant,       // <--- AJOUT
             project_type: details.projectType     // <--- AJOUT
         })
@@ -195,47 +195,60 @@ export async function cancelReservation(reservationId: number) {
    ========================================================================== */
 
 /**
- * Mettre à jour le statut d'une réservation (Admin).
+ * Mettre à jour le statut global d'un dossier (Request).
  */
-export async function updateReservationStatus(
-    reservationId: number,
+export async function updateRequestStatus(
+    requestId: number,
     newStatus: 'validée' | 'refusée',
     reason?: string
 ) {
     const supabase = await createClient();
 
+    // 1. Vérification Admin
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.user_metadata?.role !== 'admin') {
-        return { error: "Accès refusé. Réservé aux administrateurs." };
+        return { error: "Accès refusé." };
     }
 
-    const updateData: any = { statut: newStatus };
+    // 2. Mise à jour du dossier parent (requests)
+    // ATTENTION : On suppose que la colonne s'appelle 'status' dans la table 'requests'
+    const { error: requestError } = await supabase
+        .from("requests")
+        .update({ statut: newStatus })
+        .eq("id", requestId);
 
+    if (requestError) {
+        console.error("Erreur update request:", requestError);
+        return { error: "Erreur DB Request: " + requestError.message };
+    }
+
+    // 3. Mise à jour en cascade des lignes (reservations)
+    // ATTENTION : On suppose que la colonne s'appelle 'statut' (avec un T à la fin) dans 'reservations'
+    const updateData: any = { statut: newStatus };
     if (newStatus === 'refusée' && reason) {
         updateData.message = reason;
     }
 
-    const { error } = await supabase
+    const { error: linesError } = await supabase
         .from("reservations")
         .update(updateData)
-        .eq("id", reservationId);
+        .eq("request_id", requestId);
 
-    if (error) return { error: error.message };
+    if (linesError) {
+        console.error("Erreur update reservations:", linesError);
+        return { error: "Erreur DB Reservations: " + linesError.message };
+    }
 
-    revalidatePath("/admin");
-    revalidatePath("/mes-reservations");
-    revalidatePath("/catalogue");
+    // 4. Force le rafraîchissement de toutes les pages concernées
+    revalidatePath("/admin", "page");
+    revalidatePath("/mes-reservations", "page");
+
     return { success: true };
 }
 
 /* ==========================================================================
    3. GESTION DE L'INVENTAIRE (Admin & Helpers)
    ========================================================================== */
-
-/**
- * Créer un nouveau matériel.
- */
-// ... (Твои импорты)
 
 /**
  * Créer un nouveau matériel avec quantité.

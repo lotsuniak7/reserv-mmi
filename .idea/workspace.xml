@@ -4,16 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd21c22a-e462-4a8d-b0d3-d193fc8d4183" name="Changes" comment="validation the user by admin">
-      <change afterPath="$PROJECT_DIR$/app/(protected)/admin/users/page.tsx" afterDir="false" />
+    <list default="true" id="fd21c22a-e462-4a8d-b0d3-d193fc8d4183" name="Changes" comment="nouvelle vue du formulaire dans la page panier - reservations. BUT, parcours, numero, prof...">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(protected)/admin/AdminRequestCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/admin/AdminRequestCard.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(protected)/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(protected)/admin/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/admin/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(protected)/panier/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/panier/page.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/actions.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/actions.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/test/page.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/CancelBurron.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/CancelButton.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/AddToCartButton.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/AddToCartButton.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/ProductModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/ProductModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/admin/AdminRequestCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/admin/AdminRequestCard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/cart-context.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/lib/cart-context.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -70,9 +70,11 @@
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/components" />
+      <recent name="$PROJECT_DIR$/components/admin" />
+      <recent name="$PROJECT_DIR$/app" />
+      <recent name="$PROJECT_DIR$/app/(protected)/catalogue" />
       <recent name="$PROJECT_DIR$/app/(protected)" />
-      <recent name="$PROJECT_DIR$/lib" />
-      <recent name="$PROJECT_DIR$/lib/supabase" />
     </key>
   </component>
   <component name="SharedIndexes">
@@ -111,7 +113,23 @@
       <workItem from="1765268098758" duration="613000" />
       <workItem from="1765283691103" duration="7548000" />
       <workItem from="1766593777792" duration="12947000" />
-      <workItem from="1767596882729" duration="5657000" />
+      <workItem from="1767596882729" duration="5740000" />
+      <workItem from="1767609085257" duration="2551000" />
+      <workItem from="1767621991441" duration="197000" />
+      <workItem from="1767860484941" duration="4546000" />
+      <workItem from="1767900767843" duration="17241000" />
+      <workItem from="1768324229847" duration="10839000" />
+      <workItem from="1768339496842" duration="3270000" />
+      <workItem from="1768378823712" duration="12801000" />
+      <workItem from="1768398804902" duration="3969000" />
+      <workItem from="1768411212055" duration="2000" />
+      <workItem from="1768423245673" duration="2077000" />
+      <workItem from="1768489874724" duration="10807000" />
+      <workItem from="1768548116687" duration="712000" />
+      <workItem from="1768583689247" duration="8030000" />
+      <workItem from="1768762852179" duration="648000" />
+      <workItem from="1768899808627" duration="465000" />
+      <workItem from="1768913545005" duration="18381000" />
     </task>
     <task id="LOCAL-00001" summary="New project">
       <option name="closed" value="true" />
@@ -225,7 +243,231 @@
       <option name="project" value="LOCAL" />
       <updated>1766616780630</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="validation the user by admin">
+      <option name="closed" value="true" />
+      <created>1767603263568</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1767603263568</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Change bug the reqError in null">
+      <option name="closed" value="true" />
+      <created>1767864471223</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1767864471223</updated>
+    </task>
+    <task id="LOCAL-00017" summary="Debug: new method of work with cookies, getAll and setAll">
+      <option name="closed" value="true" />
+      <created>1767864892879</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1767864892879</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Debug: new method of work with cookies, getAll and setAll">
+      <option name="closed" value="true" />
+      <created>1767865055243</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1767865055243</updated>
+    </task>
+    <task id="LOCAL-00019" summary="Delete old filies, not used">
+      <option name="closed" value="true" />
+      <created>1767865303130</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1767865303130</updated>
+    </task>
+    <task id="LOCAL-00020" summary="change version of next js">
+      <option name="closed" value="true" />
+      <created>1767865691944</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1767865691944</updated>
+    </task>
+    <task id="LOCAL-00021" summary="Add a async and await to login and signup pages">
+      <option name="closed" value="true" />
+      <created>1767903893697</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1767903893697</updated>
+    </task>
+    <task id="LOCAL-00022" summary="Add a function to delete cache">
+      <option name="closed" value="true" />
+      <created>1767909234658</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1767909234658</updated>
+    </task>
+    <task id="LOCAL-00023" summary="Changes: add a possibility refuser user, and we can see name of user and not hes id">
+      <option name="closed" value="true" />
+      <created>1767913311328</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1767913311328</updated>
+    </task>
+    <task id="LOCAL-00024" summary="Update of formulaire to add new material">
+      <option name="closed" value="true" />
+      <created>1767913836384</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1767913836384</updated>
+    </task>
+    <task id="LOCAL-00025" summary="l'ajout de la page garde, pour expliquer en gros cest quoi etc.. comment utiliser">
+      <option name="closed" value="true" />
+      <created>1768329272795</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1768329272795</updated>
+    </task>
+    <task id="LOCAL-00026" summary="OUBLIE DAJOUTER CE FICCIER,l'ajout de la page garde, pour expliquer en gros cest quoi etc.. comment utiliser">
+      <option name="closed" value="true" />
+      <created>1768329320085</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1768329320085</updated>
+    </task>
+    <task id="LOCAL-00027" summary="mise à jour de nouveau fichier d'accueil, deplacement de ce fichier vers ./, et le catalogue est vers /catalogue">
+      <option name="closed" value="true" />
+      <created>1768330799774</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1768330799774</updated>
+    </task>
+    <task id="LOCAL-00028" summary="les dernieres changement, il reste juste de travailler sur style">
+      <option name="closed" value="true" />
+      <created>1768332490701</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1768332490701</updated>
+    </task>
+    <task id="LOCAL-00029" summary="un changemet de la cologne à droite">
+      <option name="closed" value="true" />
+      <created>1768335043507</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1768335043508</updated>
+    </task>
+    <task id="LOCAL-00030" summary="changements du dossier (protected), les commentaires et restructurer un peu">
+      <option name="closed" value="true" />
+      <created>1768340841386</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1768340841386</updated>
+    </task>
+    <task id="LOCAL-00031" summary="changements des dossiers, les commentaires et restructurer un peu">
+      <option name="closed" value="true" />
+      <created>1768342647569</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1768342647569</updated>
+    </task>
+    <task id="LOCAL-00032" summary="changements du dossier components, les commentaires et restructurer un peu">
+      <option name="closed" value="true" />
+      <created>1768391064546</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1768391064546</updated>
+    </task>
+    <task id="LOCAL-00033" summary="mise à jour des commentaires dans le dossier lib/supabase">
+      <option name="closed" value="true" />
+      <created>1768392452365</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1768392452365</updated>
+    </task>
+    <task id="LOCAL-00034" summary="quelsues changemets dans le dossier action.ts">
+      <option name="closed" value="true" />
+      <created>1768393398189</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1768393398190</updated>
+    </task>
+    <task id="LOCAL-00035" summary="on peut plus supprimer admin, avant c'etait possible">
+      <option name="closed" value="true" />
+      <created>1768400339213</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1768400339213</updated>
+    </task>
+    <task id="LOCAL-00036" summary="Ressoudre d'un probleme d'affichage des disponibilités dans un onglet modal">
+      <option name="closed" value="true" />
+      <created>1768509637209</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1768509637209</updated>
+    </task>
+    <task id="LOCAL-00037" summary="on ne peut plus ajouter le même materiel en chosissant avec même date du debut mais different date de la fin">
+      <option name="closed" value="true" />
+      <created>1768512351547</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1768512351547</updated>
+    </task>
+    <task id="LOCAL-00038" summary="La grande mise è jour de la page Inventaire">
+      <option name="closed" value="true" />
+      <created>1768595639926</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1768595639926</updated>
+    </task>
+    <task id="LOCAL-00039" summary="L'ajout de la page de statistique, analytique">
+      <option name="closed" value="true" />
+      <created>1768914735396</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1768914735396</updated>
+    </task>
+    <task id="LOCAL-00040" summary="placement du bouton analystics pour acceder à la page, et quelques changemets sur la page se stats pour debuguer">
+      <option name="closed" value="true" />
+      <created>1768929734921</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1768929734921</updated>
+    </task>
+    <task id="LOCAL-00041" summary="l'ajout d'une page du profil">
+      <option name="closed" value="true" />
+      <created>1768932421559</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1768932421559</updated>
+    </task>
+    <task id="LOCAL-00042" summary="nouvelle vue du formulaire dans la page panier - reservations. BUT, parcours, numero, prof...">
+      <option name="closed" value="true" />
+      <created>1768933265840</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1768933265840</updated>
+    </task>
+    <option name="localTasksCounter" value="43" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -243,20 +485,32 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="New project" />
-    <MESSAGE value="La maquette est apliquée" />
-    <MESSAGE value="Grand changement, authentification" />
-    <MESSAGE value="je comprends pas" />
-    <MESSAGE value="fixing the problem with cookies, adding the await" />
-    <MESSAGE value="fixing bags" />
-    <MESSAGE value="Adding others pages like aide and administretion only for root" />
-    <MESSAGE value="Adding the tools for admin, and others styles" />
-    <MESSAGE value="l'ajout d'un panier" />
-    <MESSAGE value="Panier on essai de simplifier" />
-    <MESSAGE value="changes logics of panier, products" />
-    <MESSAGE value="encore les changements du panier, les demandes avec la vu dans l administration" />
-    <MESSAGE value="validation the user by admin" />
-    <option name="LAST_COMMIT_MESSAGE" value="validation the user by admin" />
+    <MESSAGE value="Debug: new method of work with cookies, getAll and setAll" />
+    <MESSAGE value="Delete old filies, not used" />
+    <MESSAGE value="change version of next js" />
+    <MESSAGE value="Add a async and await to login and signup pages" />
+    <MESSAGE value="Add a function to delete cache" />
+    <MESSAGE value="Changes: add a possibility refuser user, and we can see name of user and not hes id" />
+    <MESSAGE value="Update of formulaire to add new material" />
+    <MESSAGE value="l'ajout de la page garde, pour expliquer en gros cest quoi etc.. comment utiliser" />
+    <MESSAGE value="OUBLIE DAJOUTER CE FICCIER,l'ajout de la page garde, pour expliquer en gros cest quoi etc.. comment utiliser" />
+    <MESSAGE value="mise à jour de nouveau fichier d'accueil, deplacement de ce fichier vers ./, et le catalogue est vers /catalogue" />
+    <MESSAGE value="les dernieres changement, il reste juste de travailler sur style" />
+    <MESSAGE value="un changemet de la cologne à droite" />
+    <MESSAGE value="changements du dossier (protected), les commentaires et restructurer un peu" />
+    <MESSAGE value="changements des dossiers, les commentaires et restructurer un peu" />
+    <MESSAGE value="changements du dossier components, les commentaires et restructurer un peu" />
+    <MESSAGE value="mise à jour des commentaires dans le dossier lib/supabase" />
+    <MESSAGE value="quelsues changemets dans le dossier action.ts" />
+    <MESSAGE value="on peut plus supprimer admin, avant c'etait possible" />
+    <MESSAGE value="Ressoudre d'un probleme d'affichage des disponibilités dans un onglet modal" />
+    <MESSAGE value="on ne peut plus ajouter le même materiel en chosissant avec même date du debut mais different date de la fin" />
+    <MESSAGE value="La grande mise è jour de la page Inventaire" />
+    <MESSAGE value="L'ajout de la page de statistique, analytique" />
+    <MESSAGE value="placement du bouton analystics pour acceder à la page, et quelques changemets sur la page se stats pour debuguer" />
+    <MESSAGE value="l'ajout d'une page du profil" />
+    <MESSAGE value="nouvelle vue du formulaire dans la page panier - reservations. BUT, parcours, numero, prof..." />
+    <option name="LAST_COMMIT_MESSAGE" value="nouvelle vue du formulaire dans la page panier - reservations. BUT, parcours, numero, prof..." />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>
