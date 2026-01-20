@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { User, Phone, GraduationCap, BookOpen, Calendar, ShieldCheck, History } from "lucide-react";
+import { User, ShieldCheck, History } from "lucide-react";
 import UpdateProfileForm from "@/components/profile/UpdateProfileForm"; // Nous allons créer ce petit composant client
 
 export default async function ProfilePage() {

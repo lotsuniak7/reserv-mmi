@@ -16,16 +16,50 @@ type CartItemPayload = {
     endDate: string;
 };
 
+// Type pour les informations complémentaires du Bon de Sortie
+type BookingDetails = {
+    phone: string;
+    filiere: string;
+    parcours: string;
+    projectType: 'pédagogique' | 'personnel';
+    enseignant: string;
+};
+
+/* ==========================================================================
+   HELPER : RÉCUPÉRATION PROFIL
+   ========================================================================== */
+
+/**
+ * Récupère les infos du profil connecté pour pré-remplir le formulaire.
+ */
+export async function getMyProfile() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return null;
+
+    const { data } = await supabase
+        .from("profiles")
+        .select("full_name, email, phone, filiere, parcours")
+        .eq("id", user.id)
+        .single();
+
+    return data;
+}
+
 /* ==========================================================================
    1. GESTION DES RÉSERVATIONS (Côté Étudiant)
    ========================================================================== */
 
 /**
  * Soumettre une demande de réservation (Panier).
- * Crée un dossier "Request" et y attache les lignes "Reservations".
- * Vérifie les stocks et les dates avant insertion.
+ * Met à jour le profil utilisateur (mémoire) et crée le dossier Request.
  */
-export async function submitCartReservation(items: CartItemPayload[], globalMessage: string) {
+export async function submitCartReservation(
+    items: CartItemPayload[],
+    globalMessage: string,
+    details: BookingDetails // <--- NOUVEAU PARAMÈTRE
+) {
     const supabase = await createClient();
 
     // 1. Vérifier l'authentification
@@ -33,6 +67,17 @@ export async function submitCartReservation(items: CartItemPayload[], globalMess
     if (!user) return { error: "Vous devez être connecté." };
 
     if (items.length === 0) return { error: "Le panier est vide." };
+
+    // --- MISE À JOUR DU PROFIL (MÉMOIRE) ---
+    // On sauvegarde le téléphone, la filière et le parcours pour la prochaine fois
+    await supabase
+        .from("profiles")
+        .update({
+            phone: details.phone,
+            filiere: details.filiere,
+            parcours: details.parcours
+        })
+        .eq("id", user.id);
 
     // 2. Configuration des dates limites
     const today = new Date();
@@ -77,13 +122,15 @@ export async function submitCartReservation(items: CartItemPayload[], globalMess
         }
     }
 
-    // 4. Création du dossier (Request)
+    // 4. Création du dossier (Request) avec les nouvelles infos
     const { data: request, error: reqError } = await supabase
         .from("requests")
         .insert({
             user_id: user.id,
             message: globalMessage,
-            status: "en attente"
+            status: "en attente",
+            enseignant: details.enseignant,       // <--- AJOUT
+            project_type: details.projectType     // <--- AJOUT
         })
         .select()
         .single();
@@ -434,4 +481,38 @@ export async function signOut() {
     const supabase = await createClient();
     await supabase.auth.signOut();
     redirect("/auth/login");
+}
+
+/* ==========================================================================
+   6. GESTION DU PROFIL (User)
+   ========================================================================== */
+
+/**
+ * Met à jour les informations du profil utilisateur.
+ */
+export async function updateUserProfile(formData: FormData) {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Non connecté" };
+
+    const phone = formData.get("phone") as string;
+    const filiere = formData.get("filiere") as string;
+    const parcours = formData.get("parcours") as string;
+
+    const { error } = await supabase
+        .from("profiles")
+        .update({
+            phone,
+            filiere,
+            parcours,
+            updated_at: new Date().toISOString()
+        })
+        .eq("id", user.id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/profil");
+    revalidatePath("/panier"); // Le panier utilise ces infos
+    return { success: true };
 }

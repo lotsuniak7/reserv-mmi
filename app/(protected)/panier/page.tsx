@@ -1,38 +1,65 @@
 "use client";
 
 import { useCart } from "@/lib/cart-context";
-import { submitCartReservation } from "@/app/actions";
-import { useState } from "react";
-import { Trash2, Calendar, ShoppingBag, ArrowRight, Package } from "lucide-react";
+import { submitCartReservation, getMyProfile } from "@/app/actions"; // on importe getMyProfile
+import { useState, useEffect } from "react";
+import { Trash2, Calendar, ShoppingBag, ArrowRight, Package, User, BookOpen, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 /**
  * Page Panier (Client Component).
  * Cette page gère la finalisation de la réservation.
- * Elle utilise le contexte React (useCart) pour récupérer les choix stockés localement,
- * puis envoie le tout au Server Action pour l'enregistrement en base de données.
+ * Elle inclut désormais le formulaire complet "Bon de Sortie".
  */
 export default function CartPage() {
     // Récupération des fonctions et données du Panier (Global Context)
     const { cart, removeFromCart, clearCart } = useCart();
+    const router = useRouter();
 
-    // États locaux pour le formulaire
-    const [message, setMessage] = useState("");
+    // États locaux pour le formulaire "Bon de Sortie"
     const [loading, setLoading] = useState(false);
 
-    // Hook de navigation pour rediriger après succès
-    const router = useRouter();
+    // Données Étudiant
+    const [fullName, setFullName] = useState(""); // Juste pour affichage
+    const [phone, setPhone] = useState("");
+
+    // Données Scolaires
+    const [filiere, setFiliere] = useState("BUT 1");
+    const [parcours, setParcours] = useState("Tronc commun");
+
+    // Données Projet
+    const [projectType, setProjectType] = useState<'pédagogique' | 'personnel'>('pédagogique');
+    const [enseignant, setEnseignant] = useState("");
+    const [message, setMessage] = useState("");
+
+    // Chargement initial : On récupère les infos "mémoire" du profil
+    useEffect(() => {
+        async function loadProfile() {
+            const profile = await getMyProfile();
+            if (profile) {
+                setFullName(profile.full_name || "");
+                if (profile.phone) setPhone(profile.phone);
+                if (profile.filiere) setFiliere(profile.filiere);
+                if (profile.parcours) setParcours(profile.parcours);
+            }
+        }
+        loadProfile();
+    }, []);
 
     /**
      * Gère la soumission du formulaire.
-     * Transforme les données du panier local en format compatible avec la base de données.
      */
     async function handleSubmit() {
         if (loading) return;
+
+        // Validation basique
+        if (!phone) { alert("Merci de renseigner un numéro de téléphone."); return; }
+        if (!enseignant) { alert("Merci de renseigner l'enseignant référent."); return; }
+
         setLoading(true);
 
-        // 1. Préparation du payload (On garde seulement les champs nécessaires pour le serveur)
+        // 1. Préparation du payload panier
         const payload = cart.map(item => ({
             id: item.id,
             quantity: item.quantity,
@@ -40,16 +67,23 @@ export default function CartPage() {
             endDate: item.endDate
         }));
 
-        // 2. Appel du Server Action (Fonction asynchrone dans app/actions.ts)
-        const res = await submitCartReservation(payload, message);
+        // 2. Préparation des infos Bon de Sortie
+        const bookingDetails = {
+            phone,
+            filiere,
+            parcours,
+            projectType,
+            enseignant
+        };
+
+        // 3. Appel du Server Action
+        const res = await submitCartReservation(payload, message, bookingDetails);
         setLoading(false);
 
-        // 3. Gestion de la réponse
+        // 4. Gestion de la réponse
         if (res?.error) {
-            // En cas d'erreur (ex: stock épuisé entre temps), on alerte l'utilisateur
             alert("Erreur lors de la réservation : " + res.error);
         } else {
-            // Succès : On vide le panier local et on redirige
             clearCart();
             router.push("/mes-reservations");
         }
@@ -78,13 +112,13 @@ export default function CartPage() {
 
     // --- ÉTAT : PANIER REMPLI ---
     return (
-        <div className="max-w-4xl mx-auto space-y-8 p-6">
+        <div className="max-w-6xl mx-auto space-y-8 p-6">
 
             {/* En-tête */}
             <div className="flex items-center justify-between border-b border-slate-200 pb-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900">Récapitulatif</h1>
-                    <p className="text-slate-500 mt-1">Vérifiez vos dates avant de valider.</p>
+                    <h1 className="text-3xl font-bold text-slate-900">Finaliser la demande</h1>
+                    <p className="text-slate-500 mt-1">Complétez le bon de sortie pour valider.</p>
                 </div>
                 <div className="bg-indigo-50 text-indigo-700 px-4 py-1.5 rounded-full text-sm font-bold">
                     {cart.length} article{cart.length > 1 ? 's' : ''}
@@ -95,14 +129,13 @@ export default function CartPage() {
 
                 {/* COLONNE GAUCHE : Liste des articles */}
                 <div className="lg:col-span-2 space-y-4">
+                    <h2 className="font-bold text-lg text-slate-800 mb-2">1. Matériel sélectionné</h2>
+
                     {cart.map((item, index) => {
-                        // CORRECTION CLÉ UNIQUE : On combine ID + Dates + Index pour éviter l'erreur React
-                        // "Encountered two children with the same key"
                         const uniqueKey = `${item.id}-${item.startDate}-${item.endDate}-${index}`;
 
                         return (
                             <div key={uniqueKey} className="bg-white border border-slate-200 rounded-xl p-4 flex gap-4 items-center shadow-sm hover:border-indigo-200 transition group">
-
                                 {/* Image Miniature */}
                                 <div className="w-20 h-20 bg-slate-50 rounded-lg border border-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
                                     {item.image_url ? (
@@ -137,7 +170,6 @@ export default function CartPage() {
                                         x{item.quantity}
                                     </div>
                                     <button
-                                        // CORRECTION SUPPRESSION : On passe aussi les dates pour supprimer la bonne ligne
                                         onClick={() => removeFromCart(item.id, item.startDate, item.endDate)}
                                         className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition"
                                         title="Retirer du panier"
@@ -150,43 +182,134 @@ export default function CartPage() {
                     })}
                 </div>
 
-                {/* COLONNE DROITE : Validation */}
+                {/* COLONNE DROITE : Bon de Sortie */}
                 <div className="lg:col-span-1">
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm sticky top-6">
-                        <h2 className="font-bold text-lg text-slate-800 mb-4">Finalisation</h2>
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-lg sticky top-6">
+                        <h2 className="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
+                            <User size={20} className="text-indigo-600"/> 2. Informations Étudiant
+                        </h2>
 
                         <div className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="block font-medium text-sm text-slate-700">
-                                    Note pour l'administrateur <span className="text-slate-400 font-normal">(Optionnel)</span>
+
+                            {/* Identité (Lecture seule + Téléphone) */}
+                            <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
+                                <div className="text-sm">
+                                    <label className="block text-xs font-bold text-slate-400 uppercase">Nom & Prénom</label>
+                                    <div className="font-bold text-slate-700">{fullName || "Chargement..."}</div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Téléphone <span className="text-red-500">*</span></label>
+                                    <div className="flex items-center bg-white border border-slate-300 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-indigo-500">
+                                        <div className="pl-3 text-slate-400"><Phone size={14}/></div>
+                                        <input
+                                            type="tel"
+                                            value={phone}
+                                            onChange={(e) => setPhone(e.target.value)}
+                                            placeholder="06 12 34 56 78"
+                                            className="w-full p-2 text-sm outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Scolarité */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Filière</label>
+                                    <select
+                                        value={filiere}
+                                        onChange={(e) => setFiliere(e.target.value)}
+                                        className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:border-indigo-500"
+                                    >
+                                        <option value="BUT 1">BUT 1</option>
+                                        <option value="BUT 2">BUT 2</option>
+                                        <option value="BUT 3">BUT 3</option>
+                                        <option value="LP">Licence Pro</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Parcours</label>
+                                    <select
+                                        value={parcours}
+                                        onChange={(e) => setParcours(e.target.value)}
+                                        className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:border-indigo-500"
+                                    >
+                                        <option value="Tronc commun">Tronc commun</option>
+                                        <option value="DWDI">DWDI (Web)</option>
+                                        <option value="CN">CN (Numérique)</option>
+                                        <option value="SCNDE">SCNDE (Design)</option>
+                                        <option value="Autre">Autre</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <hr className="border-slate-100 my-2" />
+
+                            {/* Projet */}
+                            <h2 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                                <BookOpen size={20} className="text-indigo-600"/> 3. Détails Projet
+                            </h2>
+
+                            {/* Type de projet (Toggle) */}
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Type de projet</label>
+                                <div className="flex bg-slate-100 p-1 rounded-lg">
+                                    <button
+                                        onClick={() => setProjectType('pédagogique')}
+                                        className={`flex-1 py-1.5 text-xs font-bold rounded-md transition ${projectType === 'pédagogique' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        Pédagogique
+                                    </button>
+                                    <button
+                                        onClick={() => setProjectType('personnel')}
+                                        className={`flex-1 py-1.5 text-xs font-bold rounded-md transition ${projectType === 'personnel' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        Personnel
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Enseignant */}
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Enseignant Référent <span className="text-red-500">*</span></label>
+                                <input
+                                    type="text"
+                                    value={enseignant}
+                                    onChange={(e) => setEnseignant(e.target.value)}
+                                    placeholder="Nom de l'enseignant"
+                                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                                />
+                            </div>
+
+                            {/* Commentaire optionnel */}
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                                    Remarques <span className="text-slate-400 font-normal lowercase">(optionnel)</span>
                                 </label>
                                 <textarea
-                                    className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition resize-none"
-                                    rows={4}
-                                    placeholder="Ex: Projet court-métrage S3, besoin de batteries supplémentaires..."
+                                    className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition resize-none"
+                                    rows={2}
+                                    placeholder="Détails supplémentaires..."
                                     value={message}
                                     onChange={e => setMessage(e.target.value)}
                                 />
                             </div>
 
+                            {/* Bouton Validation */}
                             <button
                                 onClick={handleSubmit}
                                 disabled={loading}
-                                className="w-full py-3.5 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 disabled:opacity-70 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+                                className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 disabled:opacity-70 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 mt-4 shadow-lg shadow-indigo-500/20"
                             >
                                 {loading ? (
                                     <>
                                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
-                                        Validation...
+                                        Validation en cours...
                                     </>
                                 ) : (
                                     "Confirmer la demande"
                                 )}
                             </button>
-
-                            <p className="text-xs text-center text-slate-400 leading-relaxed px-2">
-                                En validant, vous vous engagez à respecter le matériel et les délais de retour du département MMI.
-                            </p>
                         </div>
                     </div>
                 </div>
