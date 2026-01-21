@@ -4,17 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd21c22a-e462-4a8d-b0d3-d193fc8d4183" name="Changes" comment="nouvelle vue du formulaire dans la page panier - reservations. BUT, parcours, numero, prof...">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(protected)/admin/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/admin/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(protected)/panier/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(protected)/panier/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/actions.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/actions.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/AddToCartButton.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/AddToCartButton.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/ProductModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/ProductModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/admin/AdminRequestCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/admin/AdminRequestCard.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/cart-context.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/lib/cart-context.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-    </list>
+    <list default="true" id="fd21c22a-e462-4a8d-b0d3-d193fc8d4183" name="Changes" comment="changements jsp quoi dire, il me reste de dabuger 2 bug" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -130,6 +120,7 @@
       <workItem from="1768762852179" duration="648000" />
       <workItem from="1768899808627" duration="465000" />
       <workItem from="1768913545005" duration="18381000" />
+      <workItem from="1768944388525" duration="2400000" />
     </task>
     <task id="LOCAL-00001" summary="New project">
       <option name="closed" value="true" />
@@ -467,7 +458,15 @@
       <option name="project" value="LOCAL" />
       <updated>1768933265840</updated>
     </task>
-    <option name="localTasksCounter" value="43" />
+    <task id="LOCAL-00043" summary="changements jsp quoi dire, il me reste de dabuger 2 bug">
+      <option name="closed" value="true" />
+      <created>1768949163994</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1768949163994</updated>
+    </task>
+    <option name="localTasksCounter" value="44" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -485,7 +484,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Debug: new method of work with cookies, getAll and setAll" />
     <MESSAGE value="Delete old filies, not used" />
     <MESSAGE value="change version of next js" />
     <MESSAGE value="Add a async and await to login and signup pages" />
@@ -510,7 +508,8 @@
     <MESSAGE value="placement du bouton analystics pour acceder à la page, et quelques changemets sur la page se stats pour debuguer" />
     <MESSAGE value="l'ajout d'une page du profil" />
     <MESSAGE value="nouvelle vue du formulaire dans la page panier - reservations. BUT, parcours, numero, prof..." />
-    <option name="LAST_COMMIT_MESSAGE" value="nouvelle vue du formulaire dans la page panier - reservations. BUT, parcours, numero, prof..." />
+    <MESSAGE value="changements jsp quoi dire, il me reste de dabuger 2 bug" />
+    <option name="LAST_COMMIT_MESSAGE" value="changements jsp quoi dire, il me reste de dabuger 2 bug" />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>

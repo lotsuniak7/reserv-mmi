@@ -70,7 +70,7 @@ export default async function AdminStatsPage() {
 
     // --- TRAITEMENT DES DONNÉES (CALCULS) ---
 
-    // A. Évolution mensuelle (Graphique en courbes)
+    // Évolution mensuelle (Graphique en courbes)
     // On initialise d'abord les 12 derniers mois à 0 pour éviter les "trous" dans le graphique
     const monthsMap = new Map<string, number>();
     const now = new Date();
@@ -94,7 +94,7 @@ export default async function AdminStatsPage() {
         reservations,
     }));
 
-    // B. Répartition par Catégorie (Camembert)
+    // Répartition par Catégorie (Camembert)
     const categoryMap: Record<string, number> = {};
     reservations.forEach((r) => {
         const cat = r.instruments?.categorie || "Autre";
@@ -106,7 +106,7 @@ export default async function AdminStatsPage() {
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value);
 
-    // C. Analyse du Matériel (Top & Flop)
+    // Analyse du Matériel (Top & Flop)
     const instrumentCount: Record<string, number> = {};
     reservations.forEach((r) => {
         const name = r.instruments?.name || "Supprimé";
@@ -136,7 +136,7 @@ export default async function AdminStatsPage() {
             };
         });
 
-    // E. Statuts (Graphique en barres)
+    // Statuts (Graphique en barres)
     const statusCount = { validée: 0, refusée: 0, "en attente": 0 };
     reservations.forEach((r) => {
         if (statusCount[r.statut] !== undefined) statusCount[r.statut]++;

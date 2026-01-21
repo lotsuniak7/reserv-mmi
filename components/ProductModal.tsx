@@ -41,7 +41,7 @@ export default function ProductModal({ instrument, isOpen, onClose, initialDateS
     const [startDate, setStartDate] = useState(initialDateStart);
     const [endDate, setEndDate] = useState(initialDateEnd);
 
-    // NOUVEAU : Gestion des heures (par défaut 09:00 - 17:00, horaires de bureau classiques)
+    // Gestion des heures (par défaut 09:00 - 17:00, horaires de bureau classiques)
     const [startTime, setStartTime] = useState("09:00");
     const [endTime, setEndTime] = useState("17:00");
 
@@ -248,8 +248,8 @@ export default function ProductModal({ instrument, isOpen, onClose, initialDateS
                                 dates={startDate && endDate ? {
                                     start: startDate,
                                     end: endDate,
-                                    startTime: startTime, // <-- Ajouté
-                                    endTime: endTime      // <-- Ajouté
+                                    startTime: startTime,
+                                    endTime: endTime
                                 } : null}
                                 onSuccess={onClose}
                             />

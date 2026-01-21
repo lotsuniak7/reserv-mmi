@@ -3,13 +3,14 @@ import Header from "@/components/Header";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { redirect } from "next/navigation";
-// Новые импорты для экрана блокировки
+// Nouveaux imports pour l'écran de verrouillage
 import { Lock } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
     const cookieStore = await cookies();
 
+    // Initialisation du client Supabase côté serveur
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -27,26 +28,28 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         }
     );
 
+    // Vérification de la session utilisateur
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect("/auth/login");
 
-    // --- НАЧАЛО НОВОЙ ЛОГИКИ (Проверка одобрения) ---
+    // --- DÉBUT DE LA LOGIQUE DE VÉRIFICATION (Approbation) ---
+    // On récupère le statut 'is_approved' du profil utilisateur
     const { data: profile } = await supabase
         .from("profiles")
         .select("is_approved")
         .eq("id", user.id)
         .single();
 
-    // --- ДОБАВИТЬ ЭТОТ БЛОК ДЛЯ ПРОВЕРКИ ---
+    // --- BLOC DE DÉBOGAGE (À supprimer en production si nécessaire) ---
     console.log("🔍 DEBUG LAYOUT:");
-    console.log("User ID:", user.id);
-    console.log("Profile Data:", profile);
-    console.log("Profile Error:");
-    // ---------------------------------------
+    console.log("ID Utilisateur :", user.id);
+    console.log("Données du profil :", profile);
+    // ------------------------------------------------------------------
 
-    // Если профиля нет (ошибка) или он не одобрен
+    // Si le profil n'existe pas (erreur) ou s'il n'est pas approuvé par un admin
     if (!profile || !profile.is_approved) {
-        // Функция выхода для заблокированного пользователя
+
+        // Server Action : Fonction de déconnexion pour l'utilisateur bloqué
         const signOut = async () => {
             "use server";
             const cookieStore = await cookies();
@@ -70,6 +73,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
             redirect("/auth/login");
         };
 
+        // Affichage de l'écran de verrouillage (Lock Screen)
         return (
             <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
                 <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center space-y-6">
@@ -95,16 +99,16 @@ export default async function ProtectedLayout({ children }: { children: React.Re
             </div>
         );
     }
-    // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+    // --- FIN DE LA LOGIQUE DE VÉRIFICATION ---
 
 
-    // Если одобрен — показываем твой старый Layout
-    // Получаем роль пользователя (как у тебя было)
+    // Si le compte est approuvé : On affiche la mise en page principale (Layout)
+    // Récupération du rôle utilisateur depuis les métadonnées
     const userRole = user.user_metadata?.role;
 
     return (
         <div className="flex h-screen overflow-hidden bg-[var(--background)]">
-            {/* Передаем роль в Sidebar */}
+            {/* Transmission du rôle à la Sidebar pour l'affichage conditionnel */}
             <Sidebar role={userRole} />
 
             <div className="flex-1 flex flex-col overflow-hidden">

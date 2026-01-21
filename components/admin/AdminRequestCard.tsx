@@ -1,6 +1,6 @@
 "use client";
 
-import { updateRequestStatus } from "@/app/actions"; // <--- On utilise la NOUVELLE action globale
+import { updateRequestStatus } from "@/app/actions";
 import { useState } from "react";
 import { Check, X, User, MessageSquare, Package, FileText, Printer, Phone, GraduationCap, XCircle } from "lucide-react";
 
@@ -20,7 +20,7 @@ type ReservationItem = {
 type RequestWithDetails = {
     id: number;
     created_at: string;
-    statut: string; // "en attente", "validée", "refusée"
+    statut: string;
     message: string | null;
     enseignant?: string;
     project_type?: string;
@@ -282,7 +282,6 @@ export default function AdminRequestCard({ request }: { request: RequestWithDeta
                                 </div>
                                 <div className="text-right">
                                     <p className="text-sm text-slate-500">Créé le {new Date(request.created_at).toLocaleDateString("fr-FR")}</p>
-                                    <div className="mt-1 font-mono font-bold text-lg">#{request.id}</div>
                                 </div>
                             </div>
 
@@ -299,7 +298,7 @@ export default function AdminRequestCard({ request }: { request: RequestWithDeta
                                     <h4 className="font-bold uppercase text-xs text-slate-500 border-b border-slate-200 pb-1 mb-2">Projet</h4>
                                     <div className="text-sm space-y-2">
                                         <div><span className="font-bold text-slate-700">Type :</span> {request.project_type || "Non spécifié"}</div>
-                                        <div><span className="font-bold text-slate-700">Prof :</span> {request.enseignant || "—"}</div>
+                                        <div><span className="font-bold text-slate-700">Enseignant :</span> {request.enseignant || "—"}</div>
                                         {request.message && (
                                             <div className="mt-2 text-slate-500 italic text-xs border-l-2 border-slate-300 pl-2">{request.message}</div>
                                         )}

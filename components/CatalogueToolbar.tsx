@@ -80,7 +80,7 @@ export default function CatalogueToolbar({ items, categories }: Props) {
         router.push("/catalogue");
     };
 
-    // --- FILTRAGE (1. Filtrer la liste globale) ---
+    // --- FILTRAGE ---
     const filtered = useMemo(() => {
         return items.filter((it) => {
             const okCat = !cat || it.categorie === cat;
@@ -89,7 +89,7 @@ export default function CatalogueToolbar({ items, categories }: Props) {
         });
     }, [items, q, cat]);
 
-    // --- PAGINATION (2. Calculer les pages) ---
+    // --- PAGINATION ---
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
 
     // (3. Découper la liste pour la page actuelle)

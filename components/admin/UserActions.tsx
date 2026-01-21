@@ -17,14 +17,14 @@ type UserActionsProps = {
 export default function UserActions({ userId, userEmail, isApproved }: UserActionsProps) {
     const [loading, setLoading] = useState<string | null>(null); // 'approve', 'reject', 'delete' ou null
 
-    // Action : Valider l'utilisateur
+    // Valider l'utilisateur
     async function handleApprove() {
         setLoading('approve');
         await approveUser(userId, userEmail);
         setLoading(null);
     }
 
-    // Action : Refuser l'inscription
+    // Refuser l'inscription
     async function handleReject() {
         if (!confirm("Voulez-vous vraiment refuser et supprimer cette demande ?")) return;
         setLoading('reject');
@@ -32,7 +32,7 @@ export default function UserActions({ userId, userEmail, isApproved }: UserActio
         setLoading(null);
     }
 
-    // Action : Supprimer un utilisateur existant
+    // Supprimer un utilisateur existant
     async function handleDelete() {
         if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur définitivement ?")) return;
         setLoading('delete');

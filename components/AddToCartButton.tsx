@@ -61,14 +61,14 @@ export default function AddToCartButton({ instrument, availableQty, dates, onSuc
 
         // VÉRIFICATION DU RÉSULTAT
         if (result.success) {
-            // SUCCÈS : On lance l'animation
+            // SUCCÈS
             setAdded(true);
             setTimeout(() => {
                 setAdded(false);
                 if (onSuccess) onSuccess();
             }, 1000);
         } else {
-            // ÉCHEC (Conflit de dates) : On avertit l'utilisateur
+            // ÉCHEC (Conflit de dates)
             alert("⛔ IMPOSSIBLE D'AJOUTER AU PANIER\n\n" + (result.error || "Erreur inconnue"));
         }
     };

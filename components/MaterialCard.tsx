@@ -5,7 +5,7 @@ import { Camera, Package } from "lucide-react";
 type Props = {
     id: number;
     name: string;
-    status: string;          // 'dispo' | 'réservé' | 'indisponible'
+    status: string;
     categorie?: string | null;
     quantite?: number | null;
     image_url?: string | null;
