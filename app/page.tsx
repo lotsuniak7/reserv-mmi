@@ -259,6 +259,7 @@ export default function LandingPage() {
                             </p>
                         </div>
 
+
                         {/* Liste des étapes */}
                         <div className="space-y-12">
                             <div className="border-l border-slate-300 pl-8 hover:border-indigo-400 transition-colors">
